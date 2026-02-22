@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動式視覺記憶單字卡</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --accent-color: #d35400;
+            --bg-color: #f0f2f5;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        .instructions { color: #666; margin-bottom: 30px; }
+
+        /* 響應式網格布局 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        @media (max-width: 1024px) { .grid-container { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .grid-container { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+        /* 翻牌特效 */
+        .card {
+            aspect-ratio: 16 / 9;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 圖片縮放定位 (Sprite) */
+        .sprite-img {
+            width: 100%;
+            height: 100%;
+            background-repeat: no-repeat;
+            background-size: 400% 400%; /* 4x4 網格 */
+        }
+
+        /* 背面文字樣式 */
+        .card-back {
+            transform: rotateY(180deg);
+            padding: 10px;
+            text-align: center;
+            box-sizing: border-box;
+            border: 3px solid var(--primary-color);
+            background: #fff;
+        }
+
+        .card-back h3 { margin: 5px 0; color: var(--primary-color); font-size: 1.1rem; }
+        .card-back .pronounce { color: #888; font-size: 0.8rem; margin-bottom: 5px; }
+        .card-back .mean { font-size: 0.95rem; font-weight: bold; color: #444; margin-bottom: 8px; }
+        .card-back .mnemonic { font-size: 0.85rem; color: var(--accent-color); line-height: 1.3; }
+    </style>
+</head>
+<body>
+
+    <h1>🧠 互動視覺記憶單字卡</h1>
+    <p class="instructions">點擊卡片即可查看單字說明與記憶口訣</p>
+
+    <div class="grid-container" id="vocabGrid"></div>
+
+    <script>
+        const img1 = "https://raw.githubusercontent.com/5768wolf/vocB4L1/main/grid1.jpg";
+        const img2 = "https://raw.githubusercontent.com/5768wolf/vocB4L1/main/grid2.jpg";
+
+        const vocabData = [
+            // Grid 1 (1-16)
+            { word: "individual", symbol: "[͵ɪndə`vɪdʒᴜəl]", mean: "adj. 個別的 / n. 個人", note: "每個個人心裡，都有一個不可分割的核心。", img: img1, x: 0, y: 0 },
+            { word: "record", symbol: "[rɪkɔrd]", mean: "vt. 錄音 / n. 紀錄", note: "把心中的聲音再次播放，就是紀錄。", img: img1, x: 1, y: 0 },
+            { word: "rearrange", symbol: "[͵riə`rendʒ]", mean: "vt. 重新安排", note: "把方塊重新安排，人生就過關了。", img: img1, x: 2, y: 0 },
+            { word: "seize", symbol: "[siz]", mean: "vt. 把握；抓住", note: "看見西施出現，趕快抓住機會求婚。", img: img1, x: 3, y: 0 },
+            { word: "intensive", symbol: "[ɪn`tɛnsɪv]", mean: "adj. 密集的", note: "時間被拉得超緊，就是密集訓練。", img: img1, x: 0, y: 1 },
+            { word: "typical", symbol: "[`tɪpɪkḷ]", mean: "adj. 典型的", note: "蓋上這個類型的印章，就是典型的代表。", img: img1, x: 1, y: 1 },
+            { word: "routine", symbol: "[ru`tin]", mean: "n. 例行公事", note: "每天走同樣的路徑，就是例行公事。", img: img1, x: 2, y: 1 },
+            { word: "professional", symbol: "[prə`fɛʃənḷ]", mean: "adj. 專業的", note: "專業的做事不囉唆，直接拿冠軍。", img: img1, x: 3, y: 1 },
+            { word: "electronic", symbol: "[ɪ͵lɛk`trɑnɪk]", mean: "adj. 電子的", note: "電子書裡藏著閃電與電路。", img: img1, x: 0, y: 2 },
+            { word: "advance", symbol: "[əd`væns]", mean: "vi./vt./n. 進步；進展", note: "讓先鋒車向前跑，就是進步。", img: img1, x: 1, y: 2 },
+            { word: "sufficient", symbol: "[sə`fɪʃənt]", mean: "adj. 足夠的", note: "東西拿得足夠多，心情就舒服先。", img: img1, x: 2, y: 2 },
+            { word: "equipment", symbol: "[ɪ`kwɪpmənt]", mean: "n. 設備；裝備", note: "這台製麵設備，只要丟入一塊麵。", img: img1, x: 3, y: 2 },
+            { word: "ideal", symbol: "[aɪ`diəl]", mean: "adj. 理想的", note: "最完美的 Idea 就是理想的。", img: img1, x: 0, y: 3 },
+            { word: "broadcast", symbol: "[`brɔd͵kæst]", mean: "vt./vi./n. 廣播", note: "向寬廣的世界投擲訊號。", img: img1, x: 1, y: 3 },
+            { word: "global", symbol: "[`globḷ]", mean: "adj. 全球的", note: "一條圍巾繞地球，溫暖全球。", img: img1, x: 2, y: 3 },
+            { word: "overseas", symbol: "[͵ovɚ`siz]", mean: "adv. 海外地", note: "跨越海洋到海外。", img: img1, x: 3, y: 3 },
+            
+            // Grid 2 (17-32)
+            { word: "sacrifice", symbol: "[`sækrə͵faɪs]", mean: "vt./n. 犧牲", note: "為了大局，只好殺去祭壇犧牲。", img: img2, x: 0, y: 0 },
+            { word: "imagine", symbol: "[ɪ`mædʒɪn]", mean: "vt. 想像", note: "腦袋裝進各種影像與宇宙，就是想像。", img: img2, x: 1, y: 0 },
+            { word: "esports", symbol: "[is`pɔrts]", mean: "n. 電子競技", note: "當遊戲手把穿上慢跑鞋。", img: img2, x: 2, y: 0 },
+            { word: "tournament", symbol: "[`tɝnəmənt]", mean: "n. 錦標賽", note: "贏得錦標賽的人，可以偷拿這扇金門。", img: img2, x: 3, y: 0 },
+            { word: "teamwork", symbol: "[`timwɝk]", mean: "n. 團隊合作", note: "大家一起工作，就是最強合作。", img: img2, x: 0, y: 1 },
+            { word: "full-time", symbol: "[͵fᴜl`taɪm]", mean: "adj. 全職的", note: "沙漏塞得滿滿的，沒有空隙。", img: img2, x: 1, y: 1 },
+            { word: "Hearthstone", symbol: "[`hɑrθ͵ston]", mean: "n. 爐石", note: "在溫暖的壁爐裡，發現發光的石頭。", img: img2, x: 2, y: 1 },
+            { word: "Arena of Valor", symbol: "[ərinə ʌv vælɚ]", mean: "n. 傳說對決", note: "在競技場中展現英勇之盾。", img: img2, x: 3, y: 1 },
+            { word: "friendship", symbol: "[`frɛn(d)ʃɪp]", mean: "n. 友情", note: "朋友一起開大船。", img: img2, x: 0, y: 2 },
+            { word: "have no choice but", symbol: "片語", mean: "不得不...", note: "迷宮只有一條路，不得不選。", img: img2, x: 1, y: 2 },
+            { word: "make it up to", symbol: "片語", mean: "補償", note: "把缺的部分用金拼圖補起來。", img: img2, x: 2, y: 2 },
+            { word: "stand for", symbol: "片語", mean: "代表", note: "字母 A 穿著國王披風站出來代表。", img: img2, x: 3, y: 2 },
+            { word: "key to...", symbol: "隱喻", mean: "實現...的關鍵", note: "找到金鑰匙打開雲端之門。", img: img2, x: 0, y: 3 },
+            { word: "make a living", symbol: "片語", mean: "謀生", note: "努力澆灌錢幣樹，為了謀生。", img: img2, x: 1, y: 3 },
+            { word: "as a matter of fact", symbol: "片語", mean: "事實上", note: "用放大鏡看清真相。", img: img2, x: 2, y: 3 },
+            { word: "at least", symbol: "片語", mean: "至少", note: "就算再少，至少要到這條線。", img: img2, x: 3, y: 3 }
+        ];
+
+        const container = document.getElementById('vocabGrid');
+
+        vocabData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => card.classList.toggle('flipped');
+
+            // 計算背景百分比偏移量 (4格對應 0%, 33.33%, 66.66%, 100%)
+            const posX = item.x * 33.333;
+            const posY = item.y * 33.333;
+
+            card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">
+                        <div class="sprite-img" style="background-image: url('${item.img}'); background-position: ${posX}% ${posY}%"></div>
+                    </div>
+                    <div class="card-back">
+                        <h3>${item.word}</h3>
+                        <div class="pronounce">${item.symbol}</div>
+                        <div class="mean">${item.mean}</div>
+                        <div class="mnemonic">💡 ${item.note}</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    </script>
+</body>
+</html>
