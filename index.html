@@ -14,7 +14,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', "Microsoft JhengHei", Roboto, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
             padding: 20px;
@@ -25,7 +25,7 @@
 
         h1 {
             color: var(--primary-blue);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
 
@@ -47,7 +47,7 @@
         /* Flip Card Logic */
         .card {
             background-color: transparent;
-            height: 450px;
+            height: 480px; /* 增加一點高度確保空間 */
             perspective: 1000px;
             cursor: pointer;
         }
@@ -57,10 +57,10 @@
             width: 100%;
             height: 100%;
             text-align: center;
-            transition: transform 0.6s;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            border-radius: 15px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+            border-radius: 20px;
         }
 
         .card.is-flipped .card-inner {
@@ -73,53 +73,116 @@
             height: 100%;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            border-radius: 15px;
+            border-radius: 20px;
             background: white;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #ddd;
+            border: 1px solid #eee;
         }
 
-        .card-back {
-            transform: rotateY(180deg);
-            justify-content: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        /* Sprite Image Area */
+        /* --- 正面優化：圖片與按鈕佈局 --- */
         .sprite-img {
             width: 100%;
             padding-top: var(--img-ratio);
-            background-size: 400% 400%; /* 4x4 Grid */
+            background-size: 400% 400%;
             background-repeat: no-repeat;
+            border-bottom: 2px solid #f0f0f0;
         }
 
-        /* Typography */
-        .word-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
-        .word { font-size: 2rem; color: var(--primary-blue); font-weight: bold; margin: 0; }
-        .symbol { color: #7f8c8d; font-size: 1.1rem; margin: 5px 0; }
-        
-        .pos-mean { font-size: 1.3rem; color: #333; margin-bottom: 15px; }
-        .pos { font-style: italic; color: #555; margin-right: 10px; }
-        
-        .strategy-box { background: #fef5ed; border-left: 5px solid var(--accent-orange); padding: 10px; text-align: left; margin-bottom: 10px; }
-        .strategy-label { font-weight: bold; color: var(--accent-orange); font-size: 0.9rem; display: block; }
-        
-        .mnemonic { font-size: 1.1rem; color: #444; line-height: 1.5; font-weight: 500; }
+        .word-info {
+            padding: 10px 20px; /* 縮小上下間距 */
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 垂直居中 */
+            align-items: center;
+            gap: 5px; /* 元素間距緊湊 */
+        }
+
+        .word { 
+            font-size: 2.5rem; /* 字體微調大 */
+            color: var(--primary-blue); 
+            font-weight: 800; 
+            margin: 0; 
+        }
+
+        .symbol { 
+            color: #7f8c8d; 
+            font-size: 1.2rem; 
+            margin: 0; 
+        }
 
         .speak-btn {
             background: var(--primary-blue);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            margin-top: 10px;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            margin-top: 15px; /* 確保按鈕有足夠上移空間 */
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.2);
         }
-        .speak-btn:hover { background: var(--accent-orange); }
+        .speak-btn:hover { 
+            background: var(--accent-orange); 
+            transform: translateY(-2px);
+        }
+
+        /* --- 反面優化：放大文字、填滿版面 --- */
+        .card-back {
+            transform: rotateY(180deg);
+            justify-content: space-evenly; /* 平均分布，消除空洞感 */
+            padding: 30px 25px;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+        }
+
+        .pos-mean { 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pos { 
+            font-style: italic; 
+            color: #7f8c8d; 
+            font-size: 1.4rem; 
+        }
+
+        .mean {
+            font-size: 2.2rem; /* 中文意義加大 */
+            color: var(--primary-blue);
+            font-weight: bold;
+        }
+        
+        .strategy-box { 
+            background: #fff9f4; 
+            border-top: 3px solid var(--accent-orange);
+            border-bottom: 3px solid var(--accent-orange);
+            padding: 25px 15px; 
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        .strategy-label { 
+            font-weight: bold; 
+            color: var(--accent-orange); 
+            font-size: 1.1rem; 
+            display: block;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .mnemonic { 
+            font-size: 1.5rem; /* 口訣加大 */
+            color: #2c3e50; 
+            line-height: 1.6; 
+            font-weight: 600;
+            margin: 0;
+        }
 
     </style>
 </head>
@@ -187,16 +250,16 @@
                             <div class="word-info">
                                 <p class="word">${item.word}</p>
                                 <p class="symbol">${item.symbol}</p>
-                                <button class="speak-btn" onclick="event.stopPropagation(); speak('${item.word}')">🔊 朗讀</button>
+                                <button class="speak-btn" onclick="event.stopPropagation(); speak('${item.word}')">🔊 朗讀單字</button>
                             </div>
                         </div>
                         <div class="card-back">
                             <div class="pos-mean">
                                 <span class="pos">${item.pos}</span>
-                                <strong>${item.mean}</strong>
+                                <span class="mean">${item.mean}</span>
                             </div>
                             <div class="strategy-box">
-                                <span class="strategy-label">記憶策略：${item.strategy}</span>
+                                <span class="strategy-label">💡 記憶策略：${item.strategy}</span>
                                 <p class="mnemonic">${item.mnemonic}</p>
                             </div>
                         </div>
@@ -218,6 +281,7 @@
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'en-US';
+            msg.rate = 0.9; // 稍微放慢一點點增加清晰度
             window.speechSynthesis.speak(msg);
         }
 
