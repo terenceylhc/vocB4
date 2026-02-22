@@ -42,7 +42,7 @@
         }
 
         .card {
-            height: 500px; /* 稍微增加總高度 */
+            height: 500px;
             perspective: 1000px;
             cursor: pointer;
         }
@@ -72,13 +72,14 @@
             border: 1px solid #eee;
         }
 
-        /* --- 正面優化：縮小圖片以騰出空間 --- */
+        /* --- 正面優化：取中間值，圖片比例微調 --- */
         .sprite-img {
             width: 100%;
-            padding-top: 45%; /* 從 56.25% 縮小到 45% */
+            padding-top: 52%; /* 平衡點：從 45% 調回 52% */
             background-size: 400% 400%;
             background-repeat: no-repeat;
             background-color: #f9f9f9;
+            border-bottom: 2px solid #f0f0f0;
         }
 
         .word-info {
@@ -114,40 +115,43 @@
             margin-top: 10px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.2s;
         }
+        .speak-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.15); }
 
-        /* --- 反面優化：結構重組 --- */
+        /* --- 反面優化：英文加大並下移 --- */
         .card-back {
             transform: rotateY(180deg);
-            padding: 25px;
+            padding: 30px 25px 25px 25px; /* 增加頂部 padding (30px) 讓內容下移 */
             box-sizing: border-box;
-            justify-content: space-between; /* 均勻拉開距離 */
+            justify-content: space-between;
             text-align: center;
+            background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
         }
 
         .back-top-section {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 10px; /* 增加英文與詞性的間距 */
         }
 
         .word-back {
-            font-size: 1.8rem;
-            color: #7f8c8d;
-            font-weight: 500;
-            border-bottom: 1px dashed #ddd;
-            padding-bottom: 5px;
+            font-size: 2.2rem; /* 字體加大 */
+            color: #34495e; /* 顏色加深 */
+            font-weight: 700;
+            border-bottom: 2px dashed #ddd;
+            padding-bottom: 8px;
         }
 
         .pos-back {
             font-style: italic;
-            color: #95a5a6;
-            font-size: 1.2rem;
+            color: #7f8c8d;
+            font-size: 1.3rem;
             margin-top: 5px;
         }
 
         .mean-back {
-            font-size: 2.4rem; /* 中文最大化 */
+            font-size: 2.4rem;
             color: var(--primary-blue);
             font-weight: bold;
             margin: 10px 0;
@@ -158,20 +162,23 @@
             border: 2px solid var(--accent-orange);
             padding: 20px 15px;
             border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(230, 126, 34, 0.1);
         }
 
         .strategy-label {
             color: var(--accent-orange);
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 1rem;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .mnemonic {
-            font-size: 1.4rem;
-            color: #34495e;
-            line-height: 1.5;
+            font-size: 1.5rem;
+            color: #2c3e50;
+            line-height: 1.6;
             font-weight: 600;
         }
     </style>
