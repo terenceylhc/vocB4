@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B4L1 互動單字記憶卡</title>
+    <style>
+        :root {
+            --primary-blue: #2C3E50;
+            --accent-orange: #E67E22;
+            --bg-color: #F4F7F6;
+            --card-width: 340px;
+            --img-ratio: 56.25%; /* 16:9 Aspect Ratio */
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--primary-blue);
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Responsive Grid */
+        .card-container {
+            display: grid;
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        @media (min-width: 769px) {
+            .card-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .card-container { grid-template-columns: 1fr; }
+        }
+
+        /* Flip Card Logic */
+        .card {
+            background-color: transparent;
+            height: 450px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-radius: 15px;
+        }
+
+        .card.is-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #ddd;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Sprite Image Area */
+        .sprite-img {
+            width: 100%;
+            padding-top: var(--img-ratio);
+            background-size: 400% 400%; /* 4x4 Grid */
+            background-repeat: no-repeat;
+        }
+
+        /* Typography */
+        .word-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+        .word { font-size: 2rem; color: var(--primary-blue); font-weight: bold; margin: 0; }
+        .symbol { color: #7f8c8d; font-size: 1.1rem; margin: 5px 0; }
+        
+        .pos-mean { font-size: 1.3rem; color: #333; margin-bottom: 15px; }
+        .pos { font-style: italic; color: #555; margin-right: 10px; }
+        
+        .strategy-box { background: #fef5ed; border-left: 5px solid var(--accent-orange); padding: 10px; text-align: left; margin-bottom: 10px; }
+        .strategy-label { font-weight: bold; color: var(--accent-orange); font-size: 0.9rem; display: block; }
+        
+        .mnemonic { font-size: 1.1rem; color: #444; line-height: 1.5; font-weight: 500; }
+
+        .speak-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .speak-btn:hover { background: var(--accent-orange); }
+
+    </style>
+</head>
+<body>
+
+    <h1>🧠 B4L1 互動單字記憶卡</h1>
+    <div class="card-container" id="vocabGrid"></div>
+
+    <script>
+        const grid1Url = "https://raw.githubusercontent.com/terenceylhc/vocB4/main/grid3.jpg";
+        const grid2Url = "https://raw.githubusercontent.com/terenceylhc/vocB4/main/grid4.jpg";
+
+        const vocabData = [
+            // Grid 1 (1-16)
+            { word: "individual", symbol: "/ˌɪndəˈvɪdʒuəl/", pos: "adj./n.", mean: "個別的/個人", strategy: "字根拆解", mnemonic: "一個不可分割的個人，緊抱著大硬殼。", grid: 1, x: 0, y: 0 },
+            { word: "record", symbol: "/rɪˈkɔːrd/", pos: "vt.", mean: "錄影；記錄", strategy: "諧音記憶 (雷扣)", mnemonic: "按下雷電按扣，開始錄影天空。", grid: 1, x: 1, y: 0 },
+            { word: "rearrange", symbol: "/ˌriːəˈreɪndʒ/", pos: "vt.", mean: "重新安排", strategy: "字首拆解", mnemonic: "再次排列方塊，重新安排位置。", grid: 1, x: 2, y: 0 },
+            { word: "seize", symbol: "/siz/", pos: "vt.", mean: "把握；抓住", strategy: "諧音記憶 (西施)", mnemonic: "看見西施出現，趕快抓住機會求婚。", grid: 1, x: 3, y: 0 },
+            { word: "intensive", symbol: "/ɪnˈtɛnsɪv/", pos: "adj.", mean: "密集的", strategy: "諧音記憶 (硬甜食)", mnemonic: "考前密集訓練，只能狂吃硬甜食。", grid: 1, x: 0, y: 1 },
+            { word: "typical", symbol: "/ˈtɪpɪkəl/", pos: "adj.", mean: "典型的", strategy: "諧音記憶 (踢屁股)", mnemonic: "惡作劇的典型動作就是踢屁股。", grid: 1, x: 1, y: 1 },
+            { word: "routine", symbol: "/ruˈtin/", pos: "n.", mean: "例行公事", strategy: "諧音記憶 (如丁)", mnemonic: "每天例行公事，生活死板如木丁。", grid: 1, x: 2, y: 1 },
+            { word: "professional", symbol: "/prəˈfɛʃənəl/", pos: "adj.", mean: "專業的", strategy: "諧音記憶 (破費神)", mnemonic: "為了變專業，真的超破費神。", grid: 1, x: 3, y: 1 },
+            { word: "electronic", symbol: "/ɪˌlɛkˈtrɑnɪk/", pos: "adj.", mean: "電子的", strategy: "字根聯想", mnemonic: "電子書本，插著插頭在充電。", grid: 1, x: 0, y: 2 },
+            { word: "advance", symbol: "/ədˈvæns/", pos: "vi.", mean: "進步；進展", strategy: "諧音記憶 (安碗司)", mnemonic: "機器人安穩拿碗當司機，科技大進步。", grid: 1, x: 1, y: 2 },
+            { word: "sufficient", symbol: "/səˈfɪʃənt/", pos: "adj.", mean: "足夠的", strategy: "諧音記憶 (舒服省)", mnemonic: "存糧足夠，舒服又省力。", grid: 1, x: 2, y: 2 },
+            { word: "equipment", symbol: "/ɪˈkwɪpmənt/", pos: "n.", mean: "設備；裝備", strategy: "諧音記憶 (一塊麵)", mnemonic: "他的全套設備，只有一塊麵。", grid: 1, x: 3, y: 2 },
+            { word: "ideal", symbol: "/aɪˈdiəl/", pos: "adj.", mean: "理想的", strategy: "諧音記憶 (愛迪兒)", mnemonic: "愛迪生的兒子有最理想的燈泡。", grid: 1, x: 0, y: 3 },
+            { word: "broadcast", symbol: "/ˈbrɔdˌkæst/", pos: "vt.", mean: "播送；廣播", strategy: "字義拆解", mnemonic: "訊號寬廣投射，向全球播送。", grid: 1, x: 1, y: 3 },
+            { word: "global", symbol: "/ˈɡlobəl/", pos: "adj.", mean: "全球的", strategy: "字根聯想", mnemonic: "全球暖化，地球儀變冰淇淋融化。", grid: 1, x: 2, y: 3 },
+            { word: "overseas", symbol: "/ˌovɚˈsiz/", pos: "adv.", mean: "海外地", strategy: "字義拆解", mnemonic: "帶著行李，跳過海洋到海外。", grid: 1, x: 3, y: 3 },
+
+            // Grid 2 (17-32)
+            { word: "sacrifice", symbol: "/ˈsækrəˌfaɪs/", pos: "vt./n.", mean: "犧牲", strategy: "諧音記憶 (三塊快死)", mnemonic: "為了救主人，這三塊餅乾快死了，甘願犧牲被吃掉。", grid: 2, x: 0, y: 0 },
+            { word: "imagine", symbol: "/ɪˈmædʒɪn/", pos: "vt.", mean: "想像", strategy: "諧音記憶 (姨媽進)", mnemonic: "想像姨媽突然進來房間，要把我的電動收走。", grid: 2, x: 1, y: 0 },
+            { word: "esports", symbol: "/isˈpɔrts/", pos: "n.", mean: "電子競技", strategy: "字義拆解", mnemonic: "電子滑鼠穿上球鞋跑馬拉松，這就是電競。", grid: 2, x: 2, y: 0 },
+            { word: "tournament", symbol: "/ˈtɝnəmənt/", pos: "n.", mean: "錦標賽", strategy: "諧音記憶 (吐哪門)", mnemonic: "參加錦標賽壓力大到想吐，到底要吐哪個門？", grid: 2, x: 3, y: 0 },
+            { word: "teamwork", symbol: "/ˈtimˌwɝk/", pos: "n.", mean: "團隊合作", strategy: "字義聯想", mnemonic: "兩隻小螞蟻抬著大齒輪，這就是團隊合作。", grid: 2, x: 0, y: 1 },
+            { word: "full-time", symbol: "/ˌfʊlˈtaɪm/", pos: "adj.", mean: "全職的", strategy: "字面直譯", mnemonic: "我的沙漏時間全被塞滿了，因為我是全職員工。", grid: 2, x: 1, y: 1 },
+            { word: "Hearthstone", symbol: "/ˈhɑrθˌston/", pos: "n.", mean: "爐石戰記", strategy: "字義拆解", mnemonic: "壁爐裡的石頭縫隙，藏著一張發光的卡片。", grid: 2, x: 2, y: 1 },
+            { word: "Arena of Valor", symbol: "/əˈrinə ʌv ˈvælɚ/", pos: "n.", mean: "傳說對決", strategy: "意象組合", mnemonic: "在競技場中央，拔起代表勇氣的對決之劍。", grid: 2, x: 3, y: 1 },
+            { word: "friendship", symbol: "/ˈfrɛndˌʃɪp/", pos: "n.", mean: "友情", strategy: "字義拆解", mnemonic: "載著朋友的友情之船，帆是愛心形狀。", grid: 2, x: 0, y: 2 },
+            { word: "have no choice but to", symbol: "-", pos: "phr.", mean: "不得不", strategy: "諧音記憶 (黑武士)", mnemonic: "黑武士被困住了，不得不乖乖去練小提琴。", grid: 2, x: 1, y: 2 },
+            { word: "make it up to sb", symbol: "-", pos: "phr.", mean: "補償", strategy: "視覺聯想", mnemonic: "把破掉的心補好，當作對你的補償。", grid: 2, x: 2, y: 2 },
+            { word: "stand for", symbol: "-", pos: "phr.", mean: "代表", strategy: "字面直譯", mnemonic: "站在巨大的 X 上面，代表我是主角。", grid: 2, x: 3, y: 2 },
+            { word: "key to", symbol: "-", pos: "phr.", mean: "關鍵", strategy: "視覺聯想", mnemonic: "拿著這支關鍵鑰匙，才能開啟成功的關鍵大門。", grid: 2, x: 0, y: 3 },
+            { word: "make a living", symbol: "-", pos: "phr.", mean: "謀生", strategy: "視覺聯想", mnemonic: "在錢池子裡釣魚，這就是我的謀生之道。", grid: 2, x: 1, y: 3 },
+            { word: "as a matter of fact", symbol: "-", pos: "phr.", mean: "其實，事實上", strategy: "諧音記憶 (阿是買一坨)", mnemonic: "阿是買一坨金子？事實上，那是真的。", grid: 2, x: 2, y: 3 },
+            { word: "at least", symbol: "-", pos: "phr.", mean: "至少", strategy: "諧音記憶 (愛麗絲)", mnemonic: "愛麗絲變大了，身高至少有十公尺高。", grid: 2, x: 3, y: 3 }
+        ];
+
+        function createCards() {
+            const container = document.getElementById('vocabGrid');
+            vocabData.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                const posX = (item.x / 3) * 100;
+                const posY = (item.y / 3) * 100;
+                const bgUrl = item.grid === 1 ? grid1Url : grid2Url;
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front">
+                            <div class="sprite-img" style="background-image: url('${bgUrl}'); background-position: ${posX}% ${posY}%;"></div>
+                            <div class="word-info">
+                                <p class="word">${item.word}</p>
+                                <p class="symbol">${item.symbol}</p>
+                                <button class="speak-btn" onclick="event.stopPropagation(); speak('${item.word}')">🔊 朗讀</button>
+                            </div>
+                        </div>
+                        <div class="card-back">
+                            <div class="pos-mean">
+                                <span class="pos">${item.pos}</span>
+                                <strong>${item.mean}</strong>
+                            </div>
+                            <div class="strategy-box">
+                                <span class="strategy-label">記憶策略：${item.strategy}</span>
+                                <p class="mnemonic">${item.mnemonic}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    card.classList.toggle('is-flipped');
+                    if(card.classList.contains('is-flipped')) {
+                        speak(item.word);
+                    }
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'en-US';
+            window.speechSynthesis.speak(msg);
+        }
+
+        createCards();
+    </script>
+</body>
+</html>
