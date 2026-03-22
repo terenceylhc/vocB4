@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 B4L2 互動單字記憶卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-blue: #2C3E50;
+            --vibrant-orange: #E67E22;
+        }
+
+        body {
+            background-color: #F8FAFC;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 核心影像工程：溢位裁切邏輯 */
+        .sprite-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background-color: #fff;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .sprite-img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            /* 關鍵：放大比例 406% 用於隱藏原始網格線 */
+            background-size: 406% 406%; 
+            background-repeat: no-repeat;
+            transition: transform 0.5s ease;
+        }
+
+        /* 卡片翻轉動畫 */
+        .card-container {
+            perspective: 1000px;
+            height: 480px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            background: white;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+        }
+
+        .mnemonic-box {
+            background-color: rgba(230, 126, 34, 0.1);
+            border-left: 4px solid var(--vibrant-orange);
+            color: var(--vibrant-orange);
+        }
+
+        .btn-audio {
+            transition: all 0.2s;
+        }
+        .btn-audio:hover {
+            transform: scale(1.1);
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mx-auto px-4 py-8">
+    <header class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-[#2C3E50] mb-2">🧠 B4L2 互動單字記憶卡</h1>
+        <p class="text-gray-500">點擊卡片翻面，點擊喇叭圖示發音</p>
+    </header>
+
+    <!-- 卡片網格 -->
+    <div id="vocab-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <!-- 卡片將由 JS 生成 -->
+    </div>
+</div>
+
+<script>
+    const vocabData = [
+        {
+            "grid": 1,
+            "imgUrl": "https://github.com/terenceylhc/vocB4/blob/main/B4L2G1.jpg?raw=true",
+            "items": [
+                { "id": 1, "word": "content", "ipa": "[kən`tɛnt]", "pos": "adj.", "meaning": "滿意的", "strategy": "諧音 (看、騰)", "mnemonic": "看到股市翻騰漲停(紅K)，感到非常滿意。" },
+                { "id": 2, "word": "nevertheless", "ipa": "[ˌnɛvɚðə`lɛs]", "pos": "adv.", "meaning": "儘管如此", "strategy": "字根 (never-the-less)", "mnemonic": "數量從不這麼少，儘管如此還是要做完。" },
+                { "id": 3, "word": "concept", "ipa": "[`kansɛpt]", "pos": "n.", "meaning": "概念", "strategy": "字根 (共同-抓)", "mnemonic": "大家共同抓住重點，才有共同的概念。" },
+                { "id": 4, "word": "pronounce", "ipa": "[prə`nauns]", "pos": "vt.", "meaning": "發音", "strategy": "諧音 (頗鬧)", "mnemonic": "這單字發音很「頗鬧」(Quite Noisy)，練習發音就像在台上大喊。" },
+                { "id": 5, "word": "atmosphere", "ipa": "[`ætməsˌfɪr]", "pos": "n.", "meaning": "氣氛", "strategy": "字根 (空氣-球)", "mnemonic": "空氣環繞著地球，形成浪漫的氣氛。" },
+                { "id": 6, "word": "fascinated", "ipa": "[`fæsn̩ˌetɪd]", "pos": "adj.", "meaning": "著迷的", "strategy": "諧音 (肥死你抬)", "mnemonic": "肥死你還要人抬，因為對美食太著迷。" },
+                { "id": 7, "word": "sigh", "ipa": "[saɪ]", "pos": "v./n.", "meaning": "嘆氣", "strategy": "諧音 (賽)", "mnemonic": "手氣很賽(運氣差)，只能一直嘆氣。" },
+                { "id": 8, "word": "roughly", "ipa": "[`rʌflɪ]", "pos": "adv.", "meaning": "大約", "strategy": "諧音 (拉福利)", "mnemonic": "拉車領福利的人，大約有一百個。" },
+                { "id": 9, "word": "passive", "ipa": "[`pæsɪv]", "pos": "adj.", "meaning": "被動的", "strategy": "諧音 (怕死夫)", "mnemonic": "怕死的丈夫像個布偶，做什麼都很被動。" },
+                { "id": 10, "word": "encounter", "ipa": "[ɪn`kauntɚ]", "pos": "vt.", "meaning": "遭遇", "strategy": "字根 (進-櫃台)", "mnemonic": "一進櫃台，就遇到拿槍的搶匪。" },
+                { "id": 11, "word": "frustration", "ipa": "[frʌ`streʃən]", "pos": "n.", "meaning": "挫折", "strategy": "諧音 (複試垂繩)", "mnemonic": "複試失敗無力垂下跳繩，感到很挫折。" },
+                { "id": 12, "word": "devote", "ipa": "[dɪ`vot]", "pos": "vt.", "meaning": "奉獻", "strategy": "諧音 (底投)", "mnemonic": "往底不到頭的箱子投錢，全心奉獻。" },
+                { "id": 13, "word": "remaining", "ipa": "[rɪ`menɪŋ]", "pos": "adj.", "meaning": "剩下的", "strategy": "諧音 (阿姨門鈴)", "mnemonic": "阿姨按門鈴，送來剩下的飯菜。" },
+                { "id": 14, "word": "stubborn", "ipa": "[`stʌbɚn]", "pos": "adj.", "meaning": "固執的", "strategy": "字根 (殘根出生)", "mnemonic": "出生就像硬殘根拔不動，個性非常固執。" },
+                { "id": 15, "word": "stuff", "ipa": "[stʌf]", "pos": "n.", "meaning": "東西", "strategy": "諧音 (史大夫)", "mnemonic": "史大夫的藥箱裡裝滿了各種醫藥東西。" }
+            ]
+        },
+        {
+            "grid": 2,
+            "imgUrl": "https://github.com/terenceylhc/vocB4/blob/main/B4L2G2.jpg?raw=true",
+            "items": [
+                { "id": 1, "word": "Denmark", "ipa": "[`dɛnˌmark]", "pos": "n.", "meaning": "丹麥", "strategy": "諧音 (單個賣)", "mnemonic": "這家店的丹麥餅乾太貴，竟然只能單個賣(Dān mài)。" },
+                { "id": 2, "word": "spill", "ipa": "[spɪl]", "pos": "vt.", "meaning": "潑灑", "strategy": "諧音 (死漂)", "mnemonic": "死命要讓水漂出去，結果潑灑了一地。" },
+                { "id": 3, "word": "try out", "ipa": "[traɪ aʊt]", "pos": "phr.", "meaning": "試驗", "strategy": "圖像 (試穿)", "mnemonic": "試穿這件發光衣，就是在進行功能試驗。" },
+                { "id": 4, "word": "put into practice", "ipa": "[pʊt ˈɪntə ˈpræktɪs]", "pos": "phr.", "meaning": "付諸實行", "strategy": "字面 (放進練習)", "mnemonic": "把想法塞進行動機器，就是付諸實行。" },
+                { "id": 5, "word": "let go of sth", "ipa": "[lɛt ɡoʊ ʌv]", "pos": "phr.", "meaning": "放下", "strategy": "圖像 (鬆手)", "mnemonic": "鬆開手讓重物掉落，徹底放下不再糾結。" },
+                { "id": 6, "word": "look forward to", "ipa": "[lʊk ˈfɔːrwərd tu]", "pos": "phr.", "meaning": "期待", "strategy": "字面 (向前看)", "mnemonic": "用望遠鏡向前看，期待遠方的派對。" },
+                { "id": 7, "word": "in other words", "ipa": "[ɪn ˈʌðər wɜːrdz]", "pos": "phr.", "meaning": "換句話說", "strategy": "字面 (別字相等)", "mnemonic": "用別的字畫上等號，就是換句話說。" },
+                { "id": 8, "word": "do one's best", "ipa": "[duː wʌnz bɛst]", "pos": "phr.", "meaning": "全力以赴", "strategy": "圖像 (拼命)", "mnemonic": "汗水狂噴也要衝過終點，就是全力以赴。" }
+            ]
+        }
+    ];
+
+    function speak(text) {
+        const msg = new SpeechSynthesisUtterance();
+        msg.text = text;
+        msg.lang = 'en-US';
+        msg.rate = 0.9;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function calculateSpritePos(index) {
+        // 4x4 結構
+        const row = Math.floor((index - 1) / 4);
+        const col = (index - 1) % 4;
+        
+        // 配合 406% 放大比例微調偏移值 (原本是 33.333%)
+        // 透過略微增加間距來抵消邊框網格線
+        const xPos = (col * 33.6).toFixed(4);
+        const yPos = (row * 33.6).toFixed(4);
+        
+        return `${xPos}% ${yPos}%`;
+    }
+
+    const gridEl = document.getElementById('vocab-grid');
+
+    vocabData.forEach(group => {
+        group.items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card-container';
+            
+            const spritePos = calculateSpritePos(item.id);
+            
+            card.innerHTML = `
+                <div class="card-inner" id="card-${group.grid}-${item.id}">
+                    <!-- 正面 -->
+                    <div class="card-face card-front flex flex-col">
+                        <div class="sprite-container">
+                            <div class="sprite-img" style="background-image: url('${group.imgUrl}'); background-position: ${spritePos};"></div>
+                        </div>
+                        <div class="p-6 flex-grow flex flex-col justify-center items-center text-center">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h2 class="text-3xl font-bold text-[#2C3E50]">${item.word}</h2>
+                                <button class="btn-audio p-2 rounded-full bg-gray-100" onclick="event.stopPropagation(); speak('${item.word}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#2C3E50]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-gray-400 font-mono text-lg">${item.ipa}</p>
+                        </div>
+                    </div>
+                    <!-- 反面 -->
+                    <div class="card-face card-back">
+                        <h2 class="text-3xl font-bold text-[#2C3E50] mb-2 border-b pb-2">${item.word}</h2>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="bg-[#2C3E50] text-white px-2 py-0.5 rounded text-sm">${item.pos}</span>
+                            <span class="text-xl font-semibold text-gray-700">${item.meaning}</span>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-500 font-medium">💡 記憶策略：</p>
+                            <p class="text-gray-700">${item.strategy}</p>
+                        </div>
+
+                        <div class="mnemonic-box p-4 rounded-xl flex-grow flex flex-col justify-center">
+                            <p class="text-xs uppercase tracking-wider font-bold mb-1 opacity-70">聯想口訣</p>
+                            <p class="text-lg font-bold leading-relaxed">${item.mnemonic}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const inner = card.querySelector('.card-inner');
+            inner.addEventListener('click', function() {
+                this.classList.toggle('is-flipped');
+                if (this.classList.contains('is-flipped')) {
+                    // 翻面時自動朗讀
+                    setTimeout(() => speak(item.word), 300);
+                }
+            });
+
+            gridEl.appendChild(card);
+        });
+    });
+</script>
+
+</body>
+</html>
