@@ -3,7 +3,7 @@ import { Star, ArrowRight, Zap, Heart, Smile, Sparkles } from 'lucide-react';
 
 const App = () => {
   return (
-    <div className="min-h-screen w-full bg-[#FFD100] flex flex-col items-center justify-center p-6 font-mono">
+    <div className="min-h-screen w-full bg-[#FFD100] flex flex-col items-center justify-center p-6 font-mono overflow-x-hidden">
       
       {/* 裝飾性背景元素 */}
       <div className="absolute top-10 left-10 animate-bounce">
@@ -31,7 +31,7 @@ const App = () => {
         {/* 標題區塊 */}
         <div className="bg-white border-[6px] border-black p-8 sm:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] mb-12">
           <h1 className="text-6xl sm:text-8xl font-black text-black leading-none mb-6 italic">
-            COMING <br /> SOON <span className="not-italic">!</span>
+            COMING <br /> SOON <span className="not-italic text-[#FF60F0]">!</span>
           </h1>
           <div className="h-2 w-full bg-black mb-6"></div>
           <p className="text-2xl sm:text-3xl font-bold text-black leading-tight">
@@ -43,7 +43,7 @@ const App = () => {
         {/* 內容特點格點 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
           <div className="bg-[#ADFF00] border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all cursor-default">
-            <Zap className="w-10 h-10 mb-4 fill-white" />
+            <Zap className="w-10 h-10 mb-4 fill-white text-black" />
             <h3 className="text-xl font-black mb-2">極速體驗</h3>
             <p className="font-bold">比你想像的還要快。</p>
           </div>
@@ -60,7 +60,7 @@ const App = () => {
             了解更多 <ArrowRight className="w-6 h-6" />
           </button>
           
-          <div className="flex gap-6">
+          <div className="flex gap-4">
             <SocialBox icon="IG" color="bg-[#FF60F0]" />
             <SocialBox icon="FB" color="bg-[#3B82F6]" />
             <SocialBox icon="TW" color="bg-white" />
@@ -70,8 +70,8 @@ const App = () => {
 
       {/* 頁尾 */}
       <footer className="mt-20">
-        <p className="text-xl font-black text-black bg-white border-2 border-black px-4 py-1">
-          EST. 2026 / BRAND STUDIO
+        <p className="text-xl font-black text-black bg-white border-2 border-black px-4 py-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          EST. 2024 / BRAND STUDIO
         </p>
       </footer>
     </div>
@@ -79,7 +79,11 @@ const App = () => {
 };
 
 const SocialBox = ({ icon, color }) => (
-  <a href="#" className={`w-14 h-14 ${color} border-4 border-black flex items-center justify-center text-xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all`}>
+  <a 
+    href="#" 
+    onClick={(e) => e.preventDefault()}
+    className={`w-14 h-14 ${color} border-4 border-black flex items-center justify-center text-xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all`}
+  >
     {icon}
   </a>
 );
