@@ -39,7 +39,7 @@
         /* 卡片翻轉動畫 */
         .card-container {
             perspective: 1000px;
-            height: 480px;
+            height: 560px; /* 增加高度以容納更大的背部字體 */
         }
 
         .card-inner {
@@ -61,7 +61,7 @@
             height: 100%;
             backface-visibility: hidden;
             border-radius: 1.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15), 0 10px 15px -6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             background: white;
         }
@@ -70,12 +70,12 @@
             transform: rotateY(180deg);
             display: flex;
             flex-direction: column;
-            padding: 2rem;
+            padding: 2.5rem; /* 增加內距 */
         }
 
         .mnemonic-box {
             background-color: rgba(230, 126, 34, 0.1);
-            border-left: 4px solid var(--vibrant-orange);
+            border-left: 6px solid var(--vibrant-orange);
             color: var(--vibrant-orange);
         }
 
@@ -92,12 +92,12 @@
 
 <div class="container mx-auto px-4 py-8">
     <header class="text-center mb-12">
-        <h1 class="text-4xl font-bold text-[#2C3E50] mb-2">🧠 B4L2 互動單字記憶卡</h1>
-        <p class="text-gray-500">點擊卡片翻面，點擊喇叭圖示發音</p>
+        <h1 class="text-5xl font-bold text-[#2C3E50] mb-4">🧠 B4L2 互動單字記憶卡</h1>
+        <p class="text-2xl text-gray-500">點擊卡片翻面，查看超大字體說明</p>
     </header>
 
     <!-- 卡片網格 -->
-    <div id="vocab-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+    <div id="vocab-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto pb-12">
         <!-- 卡片將由 JS 生成 -->
     </div>
 </div>
@@ -121,7 +121,7 @@
                 { "id": 11, "word": "frustration", "ipa": "[frʌ`streʃən]", "pos": "n.", "meaning": "挫折", "strategy": "諧音 (複試垂繩)", "mnemonic": "複試失敗無力垂下跳繩，感到很挫折。" },
                 { "id": 12, "word": "devote", "ipa": "[dɪ`vot]", "pos": "vt.", "meaning": "奉獻", "strategy": "諧音 (底投)", "mnemonic": "往底不到頭的箱子投錢，全心奉獻。" },
                 { "id": 13, "word": "remaining", "ipa": "[rɪ`menɪŋ]", "pos": "adj.", "meaning": "剩下的", "strategy": "諧音 (阿姨門鈴)", "mnemonic": "阿姨按門鈴，送來剩下的飯菜。" },
-                { "id": 14, "word": "stubborn", "ipa": "[`stʌbɚn]", "pos": "adj.", "meaning": "固執的", "strategy": "字根 (殘根出生)", "mnemonic": "出生就像硬殘根拔不動，個性非常固執。" },
+                { "id": 14, "word": "stubborn", "ipa": "[`stʌbɚn]", "pos": "adj.", "meaning": "固執的", "strategy": "字根 (殘根出生)", "mnemonic": "出生就像開殘根拔不動，個性非常固執。" },
                 { "id": 15, "word": "stuff", "ipa": "[stʌf]", "pos": "n.", "meaning": "東西", "strategy": "諧音 (史大夫)", "mnemonic": "史大夫的藥箱裡裝滿了各種醫藥東西。" }
             ]
         },
@@ -150,15 +150,10 @@
     }
 
     function calculateSpritePos(index) {
-        // 4x4 結構
         const row = Math.floor((index - 1) / 4);
         const col = (index - 1) % 4;
-        
-        // 配合 406% 放大比例微調偏移值 (原本是 33.333%)
-        // 透過略微增加間距來抵消邊框網格線
         const xPos = (col * 33.6).toFixed(4);
         const yPos = (row * 33.6).toFixed(4);
-        
         return `${xPos}% ${yPos}%`;
     }
 
@@ -168,7 +163,6 @@
         group.items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'card-container';
-            
             const spritePos = calculateSpritePos(item.id);
             
             card.innerHTML = `
@@ -179,33 +173,36 @@
                             <div class="sprite-img" style="background-image: url('${group.imgUrl}'); background-position: ${spritePos};"></div>
                         </div>
                         <div class="p-6 flex-grow flex flex-col justify-center items-center text-center">
-                            <div class="flex items-center gap-3 mb-2">
-                                <h2 class="text-3xl font-bold text-[#2C3E50]">${item.word}</h2>
-                                <button class="btn-audio p-2 rounded-full bg-gray-100" onclick="event.stopPropagation(); speak('${item.word}')">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#2C3E50]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div class="flex items-center gap-4 mb-4">
+                                <h2 class="text-5xl font-bold text-[#2C3E50]">${item.word}</h2>
+                                <button class="btn-audio p-3 rounded-full bg-gray-100 shadow-sm" onclick="event.stopPropagation(); speak('${item.word}')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-[#2C3E50]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                                     </svg>
                                 </button>
                             </div>
-                            <p class="text-gray-400 font-mono text-lg">${item.ipa}</p>
+                            <p class="text-gray-400 font-mono text-2xl">${item.ipa}</p>
                         </div>
                     </div>
-                    <!-- 反面 -->
+                    <!-- 反面：字體超強化 -->
                     <div class="card-face card-back">
-                        <h2 class="text-3xl font-bold text-[#2C3E50] mb-2 border-b pb-2">${item.word}</h2>
-                        <div class="flex items-center gap-2 mb-4">
-                            <span class="bg-[#2C3E50] text-white px-2 py-0.5 rounded text-sm">${item.pos}</span>
-                            <span class="text-xl font-semibold text-gray-700">${item.meaning}</span>
+                        <h2 class="text-5xl font-black text-[#2C3E50] mb-4 border-b-4 border-[#2C3E50]/10 pb-3">${item.word}</h2>
+                        
+                        <div class="flex items-center gap-4 mb-8">
+                            <!-- 詞性加大 -->
+                            <span class="bg-[#2C3E50] text-white px-4 py-1 rounded-lg text-xl font-black uppercase tracking-wider">${item.pos}</span>
+                            <!-- 中文意義加大 -->
+                            <span class="text-4xl font-black text-gray-900">${item.meaning}</span>
                         </div>
                         
-                        <div class="mb-4">
-                            <p class="text-sm text-gray-500 font-medium">💡 記憶策略：</p>
-                            <p class="text-gray-700">${item.strategy}</p>
+                        <div class="mb-6">
+                            <p class="text-lg text-gray-400 font-bold mb-1 uppercase tracking-widest">💡 Strategy</p>
+                            <p class="text-2xl text-gray-700 font-bold">${item.strategy}</p>
                         </div>
 
-                        <div class="mnemonic-box p-4 rounded-xl flex-grow flex flex-col justify-center">
-                            <p class="text-xs uppercase tracking-wider font-bold mb-1 opacity-70">聯想口訣</p>
-                            <p class="text-lg font-bold leading-relaxed">${item.mnemonic}</p>
+                        <div class="mnemonic-box p-6 rounded-3xl flex-grow flex flex-col justify-center shadow-inner">
+                            <p class="text-sm uppercase tracking-[0.2em] font-black mb-2 opacity-60">Mnemonic Device</p>
+                            <p class="text-3xl font-black leading-tight text-[#E67E22]">${item.mnemonic}</p>
                         </div>
                     </div>
                 </div>
@@ -215,7 +212,6 @@
             inner.addEventListener('click', function() {
                 this.classList.toggle('is-flipped');
                 if (this.classList.contains('is-flipped')) {
-                    // 翻面時自動朗讀
                     setTimeout(() => speak(item.word), 300);
                 }
             });
