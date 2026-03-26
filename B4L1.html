@@ -6,16 +6,19 @@
     <title>B4L1 互動單字記憶卡</title>
     <style>
         :root {
-            --primary-blue: #2C3E50;
+            --primary-blue: #2c3e50;
             --accent-orange: #E67E22;
-            --bg-color: #F4F7F6;
+            --bg-color: #f0f2f5;
+            --card-white: #ffffff;
+            --text-gray: #7f8c8d;
+            --shadow: 0 10px 20px rgba(0,0,0,0.08);
         }
 
         body {
             font-family: 'Segoe UI', "Microsoft JhengHei", Roboto, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -23,41 +26,47 @@
 
         h1 {
             color: var(--primary-blue);
-            font-size: 1.5rem;
-            margin-bottom: 20px;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
 
+        /* Task 2: 全網格顯示佈局鐵律 */
         .card-container {
             display: grid;
-            gap: 20px;
-            max-width: 1000px;
+            gap: 25px;
+            max-width: 1100px;
             width: 100%;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         }
 
-        @media (min-width: 769px) {
-            .card-container { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 768px) {
-            .card-container { grid-template-columns: 1fr; }
+        @media (min-width: 1024px) {
+            .card-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
+        /* Task 3: 視覺規範 - 卡片容器 */
         .card {
-            height: 500px;
             perspective: 1000px;
             cursor: pointer;
+            /* Task 2: 高度自適應 */
+            min-height: 480px; 
+            display: flex;
         }
 
         .card-inner {
             position: relative;
             width: 100%;
-            height: 100%;
             transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             border-radius: 20px;
+            box-shadow: var(--shadow);
         }
 
-        .card.is-flipped .card-inner { transform: rotateY(180deg); }
+        .card.is-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
 
         .card-front, .card-back {
             position: absolute;
@@ -65,128 +74,159 @@
             height: 100%;
             backface-visibility: hidden;
             border-radius: 20px;
-            background: white;
+            background: var(--card-white);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            border: 1px solid #eee;
         }
 
-        /* --- 正面優化：取中間值，圖片比例微調 --- */
-        .sprite-img {
+        /* Task 1: 影像無框裁切 (450% 擠出邊框) */
+        .image-box {
             width: 100%;
-            padding-top: 52%; /* 平衡點：從 45% 調回 52% */
-            background-size: 400% 400%;
+            aspect-ratio: 16 / 9;
+            background-size: 450% 450%; /* 改為 450% 強力裁切 */
             background-repeat: no-repeat;
-            background-color: #f9f9f9;
-            border-bottom: 2px solid #f0f0f0;
+            background-color: #f8f9fa;
         }
 
-        .word-info {
-            flex-grow: 1;
+        /* 正面層次優化 */
+        .front-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 10px;
+            padding: 20px;
+            text-align: center;
         }
 
-        .word-front {
-            font-size: 2.2rem;
+        .word-title {
+            font-size: 2.6rem;
             color: var(--primary-blue);
             font-weight: 800;
             margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .ipa-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 15px;
+            color: var(--text-gray);
         }
 
         .symbol {
-            color: #95a5a6;
-            font-size: 1.1rem;
-            margin: 5px 0;
+            font-size: 1.2rem;
+            font-family: 'Arial', sans-serif;
         }
 
-        .speak-btn {
-            background: var(--primary-blue);
-            color: white;
+        .audio-btn {
+            background: #f1f3f4;
             border: none;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 1rem;
-            font-weight: bold;
-            margin-top: 10px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             transition: all 0.2s;
         }
-        .speak-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.15); }
 
-        /* --- 反面優化：英文加大並下移 --- */
-        .card-back {
-            transform: rotateY(180deg);
-            padding: 30px 25px 25px 25px; /* 增加頂部 padding (30px) 讓內容下移 */
-            box-sizing: border-box;
-            justify-content: space-between;
-            text-align: center;
-            background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+        .audio-btn:hover {
+            background: #e8eaed;
+            transform: scale(1.1);
         }
 
-        .back-top-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px; /* 增加英文與詞性的間距 */
+        /* 背面版面優化 (Mandatory Task 3) */
+        .card-back {
+            transform: rotateY(180deg);
+            padding: 30px 25px;
+            box-sizing: border-box;
+            background: linear-gradient(to bottom, #ffffff, #fcfcfc);
+        }
+
+        .back-header {
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         .word-back {
-            font-size: 2.2rem; /* 字體加大 */
-            color: #34495e; /* 顏色加深 */
-            font-weight: 700;
-            border-bottom: 2px dashed #ddd;
-            padding-bottom: 8px;
-        }
-
-        .pos-back {
-            font-style: italic;
-            color: #7f8c8d;
-            font-size: 1.3rem;
-            margin-top: 5px;
-        }
-
-        .mean-back {
-            font-size: 2.4rem;
+            font-size: 2.2rem;
+            font-weight: 800;
             color: var(--primary-blue);
-            font-weight: bold;
-            margin: 10px 0;
+            margin-bottom: 8px;
         }
 
-        .strategy-box {
-            background: #fffbf2;
-            border: 2px solid var(--accent-orange);
-            padding: 20px 15px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(230, 126, 34, 0.1);
+        .pos-mean {
+            font-size: 1.4rem;
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            gap: 10px;
         }
 
-        .strategy-label {
+        .pos {
+            color: var(--text-gray);
+            font-style: italic;
+            font-weight: 400;
+        }
+
+        .chinese {
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        /* 策略與口訣區塊 */
+        .strategy-section {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .strategy-tag {
+            font-size: 1rem;
             color: var(--accent-orange);
             font-weight: bold;
-            font-size: 1rem;
-            display: block;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .mnemonic {
-            font-size: 1.5rem;
-            color: #2c3e50;
+        .mnemonic-box {
+            background-color: var(--accent-orange);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            font-size: 1.2rem;
             line-height: 1.6;
             font-weight: 600;
+            box-shadow: 0 6px 15px rgba(230, 126, 34, 0.25);
+            text-align: center;
+        }
+
+        /* 斜體灰色例句 */
+        .example-sentence {
+            font-style: italic;
+            color: #95a5a6;
+            font-size: 1rem;
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px dashed #eee;
         }
     </style>
 </head>
 <body>
 
     <h1>🧠 B4L1 互動單字記憶卡</h1>
-    <div class="card-container" id="vocabGrid"></div>
+
+    <div class="card-container" id="vocabGrid">
+        <!-- 卡片將由 JavaScript 動態生成 -->
+    </div>
 
     <script>
         const grid1Url = "https://raw.githubusercontent.com/terenceylhc/vocB4/main/grid3.jpg";
@@ -218,7 +258,7 @@
             { word: "Hearthstone", symbol: "/ˈhɑrθˌston/", pos: "n.", mean: "爐石戰記", strategy: "字義拆解", mnemonic: "壁爐裡的石頭縫隙，藏著一張發光的卡片。", grid: 2, x: 2, y: 1 },
             { word: "Arena of Valor", symbol: "/əˈrinə ʌv ˈvælɚ/", pos: "n.", mean: "傳說對決", strategy: "意象組合", mnemonic: "在競技場中央，拔起代表勇氣的對決之劍。", grid: 2, x: 3, y: 1 },
             { word: "friendship", symbol: "/ˈfrɛndˌʃɪp/", pos: "n.", mean: "友情", strategy: "字義拆解", mnemonic: "載著朋友的友情之船，帆是愛心形狀。", grid: 2, x: 0, y: 2 },
-            { word: "have no choice but to", symbol: "-", pos: "phr.", mean: "不得不", strategy: "諧音記憶", mnemonic: "黑武士被困住了，不得不乖乖去練小提琴。", grid: 2, x: 1, y: 2 },
+            { word: "have no choice but to", symbol: "-", pos: "phr.", mean: "不得不", strategy: "情境記憶", mnemonic: "黑武士被困住了，不得不乖乖去練小提琴。", grid: 2, x: 1, y: 2 },
             { word: "make it up to sb", symbol: "-", pos: "phr.", mean: "補償", strategy: "視覺聯想", mnemonic: "把破掉的心補好，當作對你的補償。", grid: 2, x: 2, y: 2 },
             { word: "stand for", symbol: "-", pos: "phr.", mean: "代表", strategy: "字面直譯", mnemonic: "站在巨大的 X 上面，代表我是主角。", grid: 2, x: 3, y: 2 },
             { word: "key to", symbol: "-", pos: "phr.", mean: "關鍵", strategy: "視覺聯想", mnemonic: "拿著這支關鍵鑰匙，才能開啟成功的關鍵大門。", grid: 2, x: 0, y: 3 },
@@ -228,10 +268,12 @@
         ];
 
         function createCards() {
-            const container = document.getElementById('vocabGrid');
-            vocabData.forEach((item) => {
+            const grid = document.getElementById('vocabGrid');
+            vocabData.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                
+                // 計算 Sprite 位置 (4x4 Grid)
                 const posX = (item.x / 3) * 100;
                 const posY = (item.y / 3) * 100;
                 const bgUrl = item.grid === 1 ? grid1Url : grid2Url;
@@ -239,31 +281,46 @@
                 card.innerHTML = `
                     <div class="card-inner">
                         <div class="card-front">
-                            <div class="sprite-img" style="background-image: url('${bgUrl}'); background-position: ${posX}% ${posY}%;"></div>
-                            <div class="word-info">
-                                <p class="word-front">${item.word}</p>
-                                <p class="symbol">${item.symbol}</p>
-                                <button class="speak-btn" onclick="event.stopPropagation(); speak('${item.word}')">🔊 朗讀</button>
+                            <div class="image-box" style="background-image: url('${bgUrl}'); background-position: ${posX}% ${posY}%;"></div>
+                            <div class="front-content">
+                                <h2 class="word-title">${item.word}</h2>
+                                <div class="ipa-section">
+                                    <span class="symbol">${item.symbol}</span>
+                                    <button class="audio-btn" onclick="event.stopPropagation(); speak('${item.word}')">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-back">
-                            <div class="back-top-section">
+                            <div class="back-header">
                                 <div class="word-back">${item.word}</div>
-                                <div class="pos-back">${item.pos}</div>
+                                <div class="pos-mean">
+                                    <span class="pos">${item.pos}</span>
+                                    <span class="chinese">${item.mean}</span>
+                                </div>
                             </div>
-                            <div class="mean-back">${item.mean}</div>
-                            <div class="strategy-box">
-                                <span class="strategy-label">💡 ${item.strategy}</span>
-                                <p class="mnemonic">${item.mnemonic}</p>
+                            <div class="strategy-section">
+                                <span class="strategy-tag">💡 ${item.strategy}</span>
+                                <div class="mnemonic-box">
+                                    ${item.mnemonic}
+                                </div>
+                            </div>
+                            <div class="example-sentence">
+                                Tap to see image & original word
                             </div>
                         </div>
                     </div>
                 `;
+
                 card.onclick = () => {
                     card.classList.toggle('is-flipped');
-                    if(card.classList.contains('is-flipped')) speak(item.word);
+                    if (card.classList.contains('is-flipped')) {
+                        speak(item.word);
+                    }
                 };
-                container.appendChild(card);
+
+                grid.appendChild(card);
             });
         }
 
@@ -271,9 +328,11 @@
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'en-US';
+            msg.rate = 0.85;
             window.speechSynthesis.speak(msg);
         }
-        createCards();
+
+        window.onload = createCards;
     </script>
 </body>
 </html>
