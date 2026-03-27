@@ -1,133 +1,312 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>COMING SOON | 新野獸派風格</title>
-    <!-- 引入 Tailwind CSS -->
+    <title>🧠 B4L3 互動單字記憶卡</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Lucide 圖示 -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Lexend+Mega:wght@400;900&display=swap');
-        
+        :root {
+            --primary-black: #000000;
+            --mnemonic-orange: rgba(243, 156, 18, 0.82);
+            --card-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            --highlight-yellow: #fff200;
+        }
+
         body {
-            font-family: 'Lexend Mega', 'Courier New', monospace;
-            background-color: #FFD100;
+            background-color: #f0f4f8;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            padding: 20px;
         }
 
-        .brutalist-card {
-            background-color: white;
-            border: 6px solid black;
-            box-shadow: 12px 12px 0px 0px rgba(0,0,0,1);
+        .vocabulary-grid {
+            display: grid;
+            gap: 30px;
+            grid-template-columns: repeat(2, 1fr);
+            max-width: 1100px;
+            margin: 0 auto;
         }
 
-        .brutalist-shadow-sm {
-            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+        @media (max-width: 768px) {
+            .vocabulary-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
-        .brutalist-shadow-md {
-            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+        .card-container {
+            perspective: 1500px;
         }
 
-        .brutalist-button-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(255, 255, 255, 1);
+        .card {
+            position: relative;
+            width: 100%;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+            border-radius: 28px;
         }
 
-        .brutalist-button-shadow:hover {
-            box-shadow: none;
-            transform: translate(4px, 4px);
+        .card.is-flipped {
+            transform: rotateY(180deg);
         }
 
-        .hover-lift:hover {
-            transform: translate(-4px, -4px);
-            box-shadow: 12px 12px 0px 0px rgba(0,0,0,1);
+        .card-face {
+            width: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 28px;
+            background: white;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
         }
 
-        @keyframes bounce-custom {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
+        .card-front {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
         }
-        .animate-bounce-custom {
-            animation: bounce-custom 3s infinite ease-in-out;
+
+        .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            transform: rotateY(180deg);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 40px;
+            background: #ffffff;
+            justify-content: center; /* 內容垂直置中 */
+            text-align: left;
+        }
+
+        /* Task 1: 影像裁切 */
+        .image-area {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-size: 406%; 
+            background-repeat: no-repeat;
+            background-color: #f8f9fa;
+        }
+
+        .front-content {
+            padding: 35px;
+            text-align: center;
+        }
+
+        .word-en {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--primary-black);
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .phonetic {
+            font-size: 1.3rem;
+            color: #94a3b8;
+            margin-bottom: 25px;
+        }
+
+        .audio-btn {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 14px 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
+            color: #475569;
+            font-weight: 700;
+        }
+
+        /* 背面排版 */
+        .back-en-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary-black);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .pos-cn {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #1e293b;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .pos-badge {
+            font-size: 1.1rem;
+            background: #f1f5f9;
+            padding: 6px 14px;
+            border-radius: 12px;
+            color: #64748b;
+            font-style: italic;
+            font-weight: 700;
+        }
+
+        .strategy-tag {
+            font-size: 1.1rem;
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mnemonic-box {
+            background: var(--mnemonic-orange);
+            color: white;
+            padding: 28px;
+            border-radius: 24px;
+            font-size: 1.5rem;
+            line-height: 1.6;
+            margin-bottom: 35px;
+            box-shadow: 0 10px 25px rgba(243, 156, 18, 0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .keyword-in-box {
+            color: var(--highlight-yellow);
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(255, 242, 0, 0.4);
+        }
+
+        .example-sentence {
+            font-style: italic;
+            color: #475569;
+            font-size: 1.25rem;
+            line-height: 1.6;
+            border-left: 6px solid #e2e8f0;
+            padding: 15px 0 15px 25px;
+            background: #f8fafc;
+            border-radius: 0 20px 20px 0;
         }
     </style>
 </head>
-<body class="min-h-screen w-full flex flex-col items-center justify-center p-6 overflow-x-hidden">
+<body>
 
-    <!-- 裝飾性背景元素 -->
-    <div class="absolute top-10 left-10 animate-bounce-custom">
-        <i data-lucide="star" class="w-12 h-12 text-black fill-black"></i>
-    </div>
-    <div class="absolute bottom-10 right-10 animate-pulse">
-        <i data-lucide="sparkles" class="w-16 h-16 text-black"></i>
-    </div>
-    <div class="absolute top-20 right-20 rotate-12 hidden md:block">
-        <div class="bg-white border-4 border-black p-4 brutalist-shadow-sm">
-            <i data-lucide="smile" class="w-8 h-8 text-black"></i>
-        </div>
-    </div>
+    <header class="text-center mt-12 mb-12">
+        <h1 class="text-5xl font-black text-gray-900 mb-3 tracking-tight">🧠 B4L3 互動單字記憶卡</h1>
+        <p class="text-gray-400 font-bold text-lg">全集中記憶 • 點擊卡片翻面</p>
+    </header>
 
-    <!-- 主要內容容器 -->
-    <main class="relative z-10 max-w-3xl w-full">
-        
-        <!-- 頂部標籤 -->
-        <div class="inline-block bg-[#00FF41] border-4 border-black px-6 py-2 mb-8 -rotate-2 brutalist-shadow-sm">
-            <span class="text-xl font-black text-black tracking-tighter uppercase">
-                Work in Progress
-            </span>
-        </div>
-
-        <!-- 標題區塊 -->
-        <div class="brutalist-card p-8 sm:p-12 mb-12">
-            <h1 class="text-6xl sm:text-8xl font-black text-black leading-none mb-6 italic uppercase">
-                COMING <br> SOON <span class="not-italic text-[#FF60F0]">!</span>
-            </h1>
-            <div class="h-2 w-full bg-black mb-6"></div>
-            <p class="text-2xl sm:text-3xl font-bold text-black leading-tight">
-                我們正在打造一些 <br>
-                <span class="bg-[#FF60F0] px-2 text-white">超酷的東西</span>。
-            </p>
-        </div>
-
-        <!-- 內容特點格點 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
-            <div class="bg-[#ADFF00] border-4 border-black p-6 brutalist-shadow-md hover-lift transition-all cursor-default">
-                <i data-lucide="zap" class="w-10 h-10 mb-4 fill-white text-black"></i>
-                <h3 class="text-xl font-black mb-2">極速體驗</h3>
-                <p class="font-bold">比你想像的還要快。</p>
-            </div>
-            <div class="bg-white border-4 border-black p-6 brutalist-shadow-md hover-lift transition-all cursor-default">
-                <i data-lucide="heart" class="w-10 h-10 mb-4 fill-[#FF60F0] text-[#FF60F0]"></i>
-                <h3 class="text-xl font-black mb-2">精心設計</h3>
-                <p class="font-bold">每一像素都充滿靈魂。</p>
-            </div>
-        </div>
-
-        <!-- 底部按鈕與連結 -->
-        <div class="flex flex-col sm:flex-row items-center gap-8">
-            <button class="w-full sm:w-auto bg-black text-white text-xl font-black px-10 py-5 border-4 border-black brutalist-button-shadow transition-all flex items-center justify-center gap-4">
-                了解更多 <i data-lucide="arrow-right" class="w-6 h-6"></i>
-            </button>
-            
-            <div class="flex gap-4">
-                <a href="#" class="w-14 h-14 bg-[#FF60F0] border-4 border-black flex items-center justify-center text-xl font-black brutalist-shadow-sm hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">IG</a>
-                <a href="#" class="w-14 h-14 bg-[#3B82F6] border-4 border-black flex items-center justify-center text-xl font-black brutalist-shadow-sm hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-white">FB</a>
-                <a href="#" class="w-14 h-14 bg-white border-4 border-black flex items-center justify-center text-xl font-black brutalist-shadow-sm hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">X</a>
-            </div>
-        </div>
-    </main>
-
-    <!-- 頁尾 -->
-    <footer class="mt-20">
-        <p class="text-xl font-black text-black bg-white border-2 border-black px-4 py-1 brutalist-shadow-sm">
-            EST. 2026 / BRAND STUDIO
-        </p>
-    </footer>
+    <div id="vocabGrid" class="vocabulary-grid"></div>
 
     <script>
-        // 初始化 Lucide 圖示
-        lucide.createIcons();
+        const vocabData = [
+            { "en": "suspicious", "ph": "[sə`spɪʃəs]", "pos": "adj.", "cn": "懷疑的", "strategy": "諧音 (沙士+冰雪)", "mnemonic": "他在冰雪地裡喝沙士，路人都露出懷疑的眼神。", "ex": "Ms. Jordan tends to be suspicious of everyone, making it difficult for her to trust others.", "grid": 1, "pos_idx": 0 },
+            { "en": "scientist", "ph": "[`saɪəntɪst]", "pos": "n. [C]", "cn": "科學家", "strategy": "諧音 (塞進測試)", "mnemonic": "科學家把小白鼠塞進迷宮裝置做測試。", "ex": "David is a social scientist who researches early childhood development.", "grid": 1, "pos_idx": 1 },
+            { "en": "claim", "ph": "[klem]", "pos": "vt.", "cn": "聲稱，主張", "strategy": "諧音 (可憐)", "mnemonic": "他大聲主張自己很可憐，要求大家給予賠償。", "ex": "Andy claimed to have seen a UFO. However, no one believed him.", "grid": 1, "pos_idx": 2 },
+            { "en": "replace", "ph": "[rɪ`ples]", "pos": "vt.", "cn": "取代，代替", "strategy": "字根 (re- 重新 + place 放置)", "mnemonic": "把舊的零件移走，將新的重新放置上去，就是取代。", "ex": "The coach replaced the injured player with another one during the game.", "grid": 1, "pos_idx": 3 },
+            { "en": "disease", "ph": "[dɪ`ziz]", "pos": "n. [C][U]", "cn": "疾病", "strategy": "字根 (dis 不 + ease 輕鬆)", "mnemonic": "身體感到不輕鬆，就是生了疾病。", "ex": "My cousin is suffering from heart disease and has to stay in the hospital.", "grid": 1, "pos_idx": 4 },
+            { "en": "cancer", "ph": "[`ænsɚ]", "pos": "n. [U]", "cn": "癌症", "strategy": "圖像 (螃蟹)", "mnemonic": "癌症就像一隻可怕的橫行螃蟹，在身體裡亂竄。", "ex": "After years of smoking, Dorian was told by the doctor that he had cancer.", "grid": 1, "pos_idx": 5 },
+            { "en": "overweight", "ph": "[`ovɚ͵wet]", "pos": "adj.", "cn": "過重的", "strategy": "字根 (over 超過 + weight 重量)", "mnemonic": "重量超過了體重計的極限，顯示你已經過重的。", "ex": "After sitting all day and eating snacks every night, Peter became overweight.", "grid": 1, "pos_idx": 6 },
+            { "en": "production", "ph": "[prə`dʌkʃən]", "pos": "n. [U]", "cn": "生產，製作", "strategy": "諧音 (頗大箱)", "mnemonic": "這條生產線效率驚人，做出來的貨品都是頗大箱。", "ex": "The new model of this cellphone will be in production next year.", "grid": 1, "pos_idx": 7 },
+            { "en": "climate", "ph": "[`klaɪmɪt]", "pos": "n. [C][U]", "cn": "氣候", "strategy": "諧音 (客萊買它)", "mnemonic": "因為極端氣候太熱，所有的客人都跑來買它（冷氣機）。", "ex": "The desert climate is usually very hot and dry.", "grid": 1, "pos_idx": 8 },
+            { "en": "brand", "ph": "[brænd]", "pos": "n. [C]", "cn": "品牌", "strategy": "諧音 (不爛)", "mnemonic": "有口碑的品牌，穿再久也不爛。", "ex": "I always buy a certain brand of milk because it tastes better than the others.", "grid": 1, "pos_idx": 9 },
+            { "en": "advertise", "ph": "[`ædvɚ͵taɪz]", "pos": "vt.", "cn": "為……打廣告", "strategy": "諧音 (愛得要死)", "mnemonic": "電視不斷打廣告，讓你對這產品愛得要死。", "ex": "Big companies may find a number of clever ways to advertise their products.", "grid": 1, "pos_idx": 10 },
+            { "en": "consumer", "ph": "[kən`sumɚ]", "pos": "n. [C]", "cn": "消費者", "strategy": "諧音 (看數目)", "mnemonic": "消費者買東西前，總會仔細看數目（價格標籤）。", "ex": "Most consumers think that this new sports watch is very useful.", "grid": 1, "pos_idx": 11 },
+            { "en": "convince", "ph": "[kən`vɪns]", "pos": "vt.", "cn": "使確信，說服", "strategy": "諧音 (看！銀子)", "mnemonic": "只要讓他看到大把銀子，就能說服他相信這筆生意。", "ex": "Mike is trying to convince the interviewers that he’s the right person.", "grid": 1, "pos_idx": 12 },
+            { "en": "favor", "ph": "[`fevɚ]", "pos": "n. [U]", "cn": "贊同，支持", "strategy": "諧音 (飛蛾)", "mnemonic": "飛蛾看到光就支持，飛過去表示贊同。", "ex": "The government’s new policy has won favor with the citizens.", "grid": 1, "pos_idx": 13 },
+            { "en": "switch", "ph": "[swɪtʃ]", "pos": "v.", "cn": "改變，轉換", "strategy": "圖像 (Switch 遊戲機)", "mnemonic": "把 Switch 的手柄拆下來，就能轉換遊戲模式。", "ex": "Eason switched our date from Tuesday to Friday.", "grid": 1, "pos_idx": 14 },
+            { "en": "gradually", "ph": "[`grædʒᴜəlɪ]", "pos": "adv.", "cn": "逐漸地", "strategy": "字根 (grad 步/階梯)", "mnemonic": "像走階梯一樣，一步一階，逐漸地爬上頂樓。", "ex": "In recent years, winters in Taiwan have been逐漸地 getting warmer.", "grid": 2, "pos_idx": 0 },
+            { "en": "attempt", "ph": "[ə`tɛmpt]", "pos": "n./v.", "cn": "企圖，嘗試", "strategy": "字根 (ad- 朝向 + tempt 誘惑)", "mnemonic": "巧克力太誘惑，他忍不住朝向誘惑伸手，嘗試做第一次嘗試。", "ex": "The students made an attempt to clean the classroom quickly.", "grid": 2, "pos_idx": 1 },
+            { "en": "sustainable", "ph": "[sə`stenəbḷ]", "pos": "adj.", "cn": "可持續的", "strategy": "字根 (sus 底下 + tain 拿住)", "mnemonic": "在底下能拿住很久，就是可持續的。", "ex": "This company uses paper and packaging that are 100% sustainable.", "grid": 2, "pos_idx": 2 },
+            { "en": "methane", "ph": "[`mɛθen]", "pos": "n. [U]", "cn": "甲烷", "strategy": "諧音 (美聲)", "mnemonic": "牛放屁排出的甲烷，聲音竟然像美聲歌唱家一樣。", "grid": 2, "pos_idx": 3 },
+            { "en": "worsen", "ph": "[`wɝsṇ]", "pos": "v.", "cn": "惡化", "strategy": "字根 (worse 更糟 + en 使變為)", "mnemonic": "屋漏偏逢連夜雨，漏水已經更糟，再下雨就是惡化。", "ex": "The government is taking steps to prevent the disease from spreading.", "grid": 2, "pos_idx": 4 },
+            { "en": "as well", "ph": "", "pos": "phr.", "cn": "也，同樣地", "strategy": "諧音 (阿~水 Well)", "mnemonic": "這口井的水 (Well) 很好，那一口井的水也一樣好。", "ex": "Donna’s father is a classical musician, and she hopes to become a concert pianist as well.", "grid": 2, "pos_idx": 5 },
+            { "en": "take steps", "ph": "", "pos": "phr.", "cn": "採取行動", "strategy": "直譯 (踏出腳步)", "mnemonic": "為了達成目標，他決定踏出腳步，正式採取行動。", "ex": "The government is taking steps to prevent the disease from spreading.", "grid": 2, "pos_idx": 6 },
+            { "en": "in favor of", "ph": "", "pos": "phr.", "cn": "支持，贊成", "strategy": "諧音 (飛蛾)", "mnemonic": "非我莫屬的計畫，連飛蛾都投下贊成票。", "ex": "Not every student in this school is in favor of the new rule.", "grid": 2, "pos_idx": 7 },
+            { "en": "when it comes to", "ph": "", "pos": "phr.", "cn": "提到，談到", "strategy": "意象 (新聞話題)", "mnemonic": "電視新聞一報導，大家開始熱烈討論。", "ex": "When it comes to jumping rope, John is undoubtedly the best in his class.", "grid": 2, "pos_idx": 8 }
+        ];
+
+        const gridUrls = {
+            1: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L3G1.jpg",
+            2: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L3G2.jpg"
+        };
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 高亮邏輯：使用 Single-Pass 正則避免破壞 HTML 標籤
+        function highlightMnemonicContent(mnemonic, strategy) {
+            if (!strategy.startsWith("諧音")) return mnemonic; 
+            
+            const match = strategy.match(/\((.*?)\)/);
+            if (!match) return mnemonic;
+            
+            const content = match[1];
+            let keywords = content.includes('+') ? content.split('+') : content.split('');
+            keywords = keywords.map(k => k.trim()).filter(k => k.length > 0 && k !== "+");
+            
+            keywords.sort((a, b) => b.length - a.length);
+            if (keywords.length === 0) return mnemonic;
+
+            const escapedKeywords = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'g');
+            
+            return mnemonic.replace(regex, '<span class="keyword-in-box">$1</span>');
+        }
+
+        function createCard(data) {
+            const col = data.pos_idx % 4;
+            const row = Math.floor(data.pos_idx / 4);
+            const posX = (col * 100 / 3).toFixed(2);
+            const posY = (row * 100 / 3).toFixed(2);
+
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'card-container';
+            
+            const finalMnemonic = highlightMnemonicContent(data.mnemonic, data.strategy);
+            
+            cardContainer.innerHTML = `
+                <div class="card" onclick="this.classList.toggle('is-flipped')">
+                    <div class="card-face card-front">
+                        <div class="image-area" style="background-image: url('${gridUrls[data.grid]}'); background-position: ${posX}% ${posY}%;"></div>
+                        <div class="front-content">
+                            <div class="word-en">${data.en}</div>
+                            <div class="phonetic">${data.ph}</div>
+                            <button class="audio-btn" onclick="event.stopPropagation(); speak('${data.en}')">
+                                <span>🔊</span> LISTEN
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="back-en-title">${data.en}</div>
+                        <div class="pos-cn">
+                            <span class="pos-badge">${data.pos}</span>
+                            <span>${data.cn}</span>
+                        </div>
+                        <div class="strategy-tag"><span>⚡</span> 記憶策略：${data.strategy}</div>
+                        <div class="mnemonic-box">${finalMnemonic}</div>
+                        ${data.ex ? `<div class="example-sentence">${data.ex}</div>` : ''}
+                    </div>
+                </div>
+            `;
+            return cardContainer;
+        }
+
+        const vocabGrid = document.getElementById('vocabGrid');
+        vocabData.forEach(item => {
+            vocabGrid.appendChild(createCard(item));
+        });
     </script>
 </body>
 </html>
