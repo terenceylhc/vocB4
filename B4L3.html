@@ -11,6 +11,7 @@
             --mnemonic-orange: rgba(243, 156, 18, 0.82);
             --card-shadow: 0 20px 40px rgba(0,0,0,0.15);
             --highlight-yellow: #fff200;
+            --strategy-dark: #334155; /* 再次加深策略文字顏色 */
         }
 
         body {
@@ -79,11 +80,10 @@
             flex-direction: column;
             padding: 40px;
             background: #ffffff;
-            justify-content: center; /* 內容垂直置中 */
+            justify-content: center;
             text-align: left;
         }
 
-        /* Task 1: 影像裁切 */
         .image-area {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -103,6 +103,7 @@
             color: var(--primary-black);
             margin-bottom: 10px;
             letter-spacing: -1px;
+            text-transform: lowercase; 
         }
 
         .phonetic {
@@ -126,44 +127,45 @@
             font-weight: 700;
         }
 
-        /* 背面排版 */
+        /* 背面微調：英文字體加大 */
         .back-en-title {
-            font-size: 2.2rem;
+            font-size: 2.8rem; 
             font-weight: 900;
             color: var(--primary-black);
-            text-transform: uppercase;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
+            text-transform: lowercase; 
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
         }
 
         .pos-cn {
             font-size: 2.2rem;
             font-weight: 900;
             color: #1e293b;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 15px;
         }
 
         .pos-badge {
-            font-size: 1.1rem;
+            font-size: 1.3rem; 
             background: #f1f5f9;
-            padding: 6px 14px;
+            padding: 8px 16px;
             border-radius: 12px;
             color: #64748b;
             font-style: italic;
             font-weight: 700;
         }
 
+        /* 背面微調：記憶策略加大 */
         .strategy-tag {
-            font-size: 1.1rem;
-            color: #cbd5e1;
-            margin-bottom: 20px;
-            font-weight: 500;
+            font-size: 1.35rem; 
+            color: var(--strategy-dark); 
+            margin-bottom: 25px;
+            font-weight: 600; 
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .mnemonic-box {
@@ -245,7 +247,6 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // 高亮邏輯：使用 Single-Pass 正則避免破壞 HTML 標籤
         function highlightMnemonicContent(mnemonic, strategy) {
             if (!strategy.startsWith("諧音")) return mnemonic; 
             
