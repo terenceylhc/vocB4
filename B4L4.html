@@ -1,133 +1,324 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>COMING SOON | 新野獸派風格</title>
-    <!-- 引入 Tailwind CSS -->
+    <title>B4L4 互動單字記憶卡</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Lucide 圖示 -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Lexend+Mega:wght@400;900&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
         body {
-            font-family: 'Lexend Mega', 'Courier New', monospace;
-            background-color: #FFD100;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            padding: 16px;
         }
 
-        .brutalist-card {
-            background-color: white;
-            border: 6px solid black;
-            box-shadow: 12px 12px 0px 0px rgba(0,0,0,1);
+        /* 全網格顯示：禁止分頁 */
+        .cards-container {
+            display: grid;
+            gap: 24px;
+            grid-template-columns: repeat(1, 1fr);
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
-        .brutalist-shadow-sm {
-            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+        @media (min-width: 768px) {
+            .cards-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
-        .brutalist-shadow-md {
-            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+        /* 3D 翻轉結構 */
+        .card-perspective {
+            perspective: 1200px;
+            cursor: pointer;
         }
 
-        .brutalist-button-shadow {
-            box-shadow: 8px 8px 0px 0px rgba(255, 255, 255, 1);
+        .card-inner {
+            display: grid;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            position: relative;
         }
 
-        .brutalist-button-shadow:hover {
-            box-shadow: none;
-            transform: translate(4px, 4px);
+        .card-perspective.flipped .card-inner {
+            transform: rotateY(180deg);
         }
 
-        .hover-lift:hover {
-            transform: translate(-4px, -4px);
-            box-shadow: 12px 12px 0px 0px rgba(0,0,0,1);
+        .card-front, .card-back {
+            grid-area: 1 / 1 / 2 / 2;
+            backface-visibility: hidden;
+            background-color: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            width: 100%;
         }
 
-        @keyframes bounce-custom {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
+        .card-front {
+            z-index: 2;
+            position: relative;
         }
-        .animate-bounce-custom {
-            animation: bounce-custom 3s infinite ease-in-out;
+
+        /* 背面：內容全置中 */
+        .card-back {
+            transform: rotateY(180deg);
+            z-index: 1;
+            padding: 40px 24px;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+        }
+
+        /* 影像無框裁切 406% */
+        .vocab-image {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-repeat: no-repeat;
+            background-size: 406%; 
+            background-color: #f1f5f9;
+        }
+
+        .content-wrap {
+            padding: 45px 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 英文字加大：正面 */
+        .word-en {
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        .phonetic {
+            color: #64748b;
+            font-size: 1.3rem;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .audio-btn {
+            background: #f8fafc;
+            border: 2px solid #f1f5f9;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .audio-btn:hover { 
+            background: #ffffff; 
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* 反面字體加大與優化 */
+        .back-title {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #1e293b;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+
+        .pos-cn {
+            font-size: 1.6rem;
+            margin-bottom: 28px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tag-pos {
+            background: #e2e8f0;
+            padding: 4px 14px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-style: italic;
+            color: #334155;
+            font-size: 1.1rem;
+        }
+
+        /* 策略內容優化 */
+        .strategy-tag {
+            font-size: 1.2rem;
+            color: #2563eb;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+
+        .mnemonic-box {
+            background-color: #ff9800;
+            color: white;
+            padding: 24px;
+            border-radius: 20px;
+            font-size: 1.3rem;
+            line-height: 1.6;
+            margin-bottom: 32px;
+            text-align: center;
+            box-shadow: 0 6px 15px rgba(255, 152, 0, 0.3);
+            width: 100%;
+            font-weight: 500;
+        }
+
+        .example-sentence {
+            color: #475569;
+            font-style: italic;
+            font-size: 1.25rem;
+            line-height: 1.7;
+            text-align: center;
+            max-width: 95%;
+            font-weight: 400;
+        }
+
+        header {
+            text-align: center;
+            margin: 40px 0 60px 0;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            color: #0f172a;
+            font-weight: 900;
         }
     </style>
 </head>
-<body class="min-h-screen w-full flex flex-col items-center justify-center p-6 overflow-x-hidden">
+<body>
 
-    <!-- 裝飾性背景元素 -->
-    <div class="absolute top-10 left-10 animate-bounce-custom">
-        <i data-lucide="star" class="w-12 h-12 text-black fill-black"></i>
-    </div>
-    <div class="absolute bottom-10 right-10 animate-pulse">
-        <i data-lucide="sparkles" class="w-16 h-16 text-black"></i>
-    </div>
-    <div class="absolute top-20 right-20 rotate-12 hidden md:block">
-        <div class="bg-white border-4 border-black p-4 brutalist-shadow-sm">
-            <i data-lucide="smile" class="w-8 h-8 text-black"></i>
-        </div>
-    </div>
+    <header>
+        <h1>B4L4 互動單字記憶卡</h1>
+        <p class="text-slate-500 mt-2 font-bold uppercase tracking-widest text-sm">Update Strategy & Enhanced Typography</p>
+    </header>
 
-    <!-- 主要內容容器 -->
-    <main class="relative z-10 max-w-3xl w-full">
-        
-        <!-- 頂部標籤 -->
-        <div class="inline-block bg-[#00FF41] border-4 border-black px-6 py-2 mb-8 -rotate-2 brutalist-shadow-sm">
-            <span class="text-xl font-black text-black tracking-tighter uppercase">
-                Work in Progress
-            </span>
-        </div>
-
-        <!-- 標題區塊 -->
-        <div class="brutalist-card p-8 sm:p-12 mb-12">
-            <h1 class="text-6xl sm:text-8xl font-black text-black leading-none mb-6 italic uppercase">
-                COMING <br> SOON <span class="not-italic text-[#FF60F0]">!</span>
-            </h1>
-            <div class="h-2 w-full bg-black mb-6"></div>
-            <p class="text-2xl sm:text-3xl font-bold text-black leading-tight">
-                我們正在打造一些 <br>
-                <span class="bg-[#FF60F0] px-2 text-white">超酷的東西</span>。
-            </p>
-        </div>
-
-        <!-- 內容特點格點 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
-            <div class="bg-[#ADFF00] border-4 border-black p-6 brutalist-shadow-md hover-lift transition-all cursor-default">
-                <i data-lucide="zap" class="w-10 h-10 mb-4 fill-white text-black"></i>
-                <h3 class="text-xl font-black mb-2">極速體驗</h3>
-                <p class="font-bold">比你想像的還要快。</p>
-            </div>
-            <div class="bg-white border-4 border-black p-6 brutalist-shadow-md hover-lift transition-all cursor-default">
-                <i data-lucide="heart" class="w-10 h-10 mb-4 fill-[#FF60F0] text-[#FF60F0]"></i>
-                <h3 class="text-xl font-black mb-2">精心設計</h3>
-                <p class="font-bold">每一像素都充滿靈魂。</p>
-            </div>
-        </div>
-
-        <!-- 底部按鈕與連結 -->
-        <div class="flex flex-col sm:flex-row items-center gap-8">
-            <button class="w-full sm:w-auto bg-black text-white text-xl font-black px-10 py-5 border-4 border-black brutalist-button-shadow transition-all flex items-center justify-center gap-4">
-                了解更多 <i data-lucide="arrow-right" class="w-6 h-6"></i>
-            </button>
-            
-            <div class="flex gap-4">
-                <a href="#" class="w-14 h-14 bg-[#FF60F0] border-4 border-black flex items-center justify-center text-xl font-black brutalist-shadow-sm hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">IG</a>
-                <a href="#" class="w-14 h-14 bg-[#3B82F6] border-4 border-black flex items-center justify-center text-xl font-black brutalist-shadow-sm hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-white">FB</a>
-                <a href="#" class="w-14 h-14 bg-white border-4 border-black flex items-center justify-center text-xl font-black brutalist-shadow-sm hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">X</a>
-            </div>
-        </div>
-    </main>
-
-    <!-- 頁尾 -->
-    <footer class="mt-20">
-        <p class="text-xl font-black text-black bg-white border-2 border-black px-4 py-1 brutalist-shadow-sm">
-            EST. 2026 / BRAND STUDIO
-        </p>
-    </footer>
+    <main class="cards-container" id="cardsGrid"></main>
 
     <script>
-        // 初始化 Lucide 圖示
-        lucide.createIcons();
+        const vocabData = [
+  { "en": "satisfy", "ph": "sætɪs͵faɪ", "pos": "vt", "cn": "使滿意", "strategy": "諧音(殺得快)", "mnemonic": "這場比賽對手「殺得快」，快狠準的表現讓教練很「滿意」。", "ex": "Andy is very satisfied with the hamburger he made.", "grid": 1, "pos_idx": 0 },
+  { "en": "criticize", "ph": "krɪtə͵saɪz", "pos": "vt", "cn": "批評", "strategy": "字型/諧音(Cry+放大鏡)", "mnemonic": "對著在 Cry (哭泣) 的人拿放大鏡分析判斷，這就是過度的「批評」。", "ex": "The restaurant was strongly criticized for its terrible food.", "grid": 1, "pos_idx": 1 },
+  { "en": "tragedy", "ph": "trædʒədɪ", "pos": "n", "cn": "悲劇", "strategy": "諧音(吹著笛)", "mnemonic": "在葬禮上哀傷地「吹著笛」子，悼念這場可怕的「悲劇」。", "ex": "While the ship was sailing across the ocean, a tragedy occurred.", "grid": 1, "pos_idx": 2 },
+  { "en": "upset", "ph": "ʌp`sɛt", "pos": "adj", "cn": "生氣的", "strategy": "圖像(Up+Set)", "mnemonic": "把餐具 Set (設定) 在牆上 Up (上面)，媽媽看到會很「生氣」。", "ex": "Teresa was very upset that her brother entered her room without knocking.", "grid": 1, "pos_idx": 3 },
+  { "en": "extremely", "ph": "ɪk`strimlɪ", "pos": "adv", "cn": "非常地", "strategy": "字根(向外流)", "mnemonic": "溪流的水「向外」溢出，代表雨下得「非常」大。", "ex": "Vincent van Gogh’s paintings are extremely valuable.", "grid": 1, "pos_idx": 4 },
+  { "en": "embarrass", "ph": "ɪm`bærəs", "pos": "vt", "cn": "使尷尬", "strategy": "諧音(硬掰肉絲)", "mnemonic": "約會剔牙時「硬掰」不掉齒縫的「肉絲」，讓人很「尷尬」。", "ex": "Amber felt embarrassed when she fell down the stairs.", "grid": 1, "pos_idx": 5 },
+  { "en": "delete", "ph": "dɪ`lit", "pos": "vt", "cn": "刪除", "strategy": "圖像(鍵盤Del鍵)", "mnemonic": "按下「鍵盤上的 Del 鍵」，把所有的煩惱都「刪除」。", "ex": "Lawrence was shocked after he deleted the important files.", "grid": 1, "pos_idx": 6 },
+  { "en": "community", "ph": "kə`mjunətɪ", "pos": "n", "cn": "社群", "strategy": "字根(共同大門)", "mnemonic": "鄰居們「共同」維護這扇印有WE的大門，這就是我們的「社群」。", "ex": "The whole community came together to help the family.", "grid": 1, "pos_idx": 7 },
+  { "en": "cruel", "ph": "kruəl", "pos": "adj", "cn": "殘忍的", "strategy": "諧音(哭哦)", "mnemonic": "壞人搶走小孩冰淇淋的「殘忍」行為，讓小孩大聲「哭哦」。", "ex": "It was cruel to leave the dog outside in the cold.", "grid": 1, "pos_idx": 8 },
+  { "en": "offend", "ph": "ə`fɛnd", "pos": "vt", "cn": "冒犯", "strategy": "字根(打擊帽子)", "mnemonic": "伸手彈飛(打擊)別人的高帽子，是非常「冒犯」的行為。", "ex": "The businessman was offended by the reporter’s questions.", "grid": 1, "pos_idx": 9 },
+  { "en": "rumor", "ph": "rumɚ", "pos": "n", "cn": "謠言", "strategy": "諧音(如馬)", "mnemonic": "「謠言」傳播的速度「如馬」奔跑一樣快，撒出傳單漫天飛舞。", "ex": "The rumor about the breakup of that celebrity couple spread quickly.", "grid": 1, "pos_idx": 10 },
+  { "en": "punish", "ph": "pʌnɪʃ", "pos": "vt", "cn": "處罰", "strategy": "諧音(怕你噓)", "mnemonic": "在台上表演失敗最「怕你噓」，這對藝人來說就是一種「處罰」。", "ex": "The teacher punished Sophia for cheating on the exam.", "grid": 1, "pos_idx": 11 },
+  { "en": "identity", "ph": "aɪ`dɛntətɪ", "pos": "n", "cn": "身分", "strategy": "諧音(愛等梯)", "mnemonic": "大家「愛」在門口「等」著爬「梯」子看榜單，確認自己的「身分」。", "ex": "The organization did not reveal the identity of the person.", "grid": 1, "pos_idx": 12 },
+  { "en": "target", "ph": "tɑrgɪt", "pos": "n", "cn": "目標對象", "strategy": "諧音(踏tar+get)", "mnemonic": "用力「踏tar」出紅圈就能「get」到獎盃，這就是我的「目標」。", "ex": "The thieves marked a red cross on the door of their target.", "grid": 1, "pos_idx": 13 },
+  { "en": "victim", "ph": "vɪktɪm", "pos": "n", "cn": "受害者", "strategy": "圖像(Victory相反)", "mnemonic": "在 Victory (勝利) 者的腳下，通常坐著失敗的「受害者」。", "ex": "Polar bears and penguins have become the victims of climate change.", "grid": 1, "pos_idx": 14 },
+  { "en": "engage", "ph": "ɪn`gedʒ", "pos": "vi", "cn": "投入", "strategy": "諧音(應給機)", "mnemonic": "「應」該「給」這台「機」器更多時間，讓工程師深入「投入」維修。", "ex": "Richard engages in several environmental activities.", "grid": 2, "pos_idx": 0 },
+  { "en": "demonstrate", "ph": "dɛmən͵stret", "pos": "vt", "cn": "展現", "strategy": "字根(Demon+Straight)", "mnemonic": "惡魔(Demon)站得筆直(Straight)，向大眾「展現」他的禮儀。", "ex": "Ken’s gesture demonstrated his confusion.", "grid": 2, "pos_idx": 1 },
+  { "en": "affect", "ph": "ə`fɛkt", "pos": "vt", "cn": "影響", "strategy": "諧音(阿！廢！課！)", "mnemonic": "這堂「阿！廢」掉(fail)的「課」，會「影響」你的畢業證書領取。", "ex": "The typhoon affected the prices of vegetables greatly.", "grid": 2, "pos_idx": 2 },
+  { "en": "mean", "ph": "min", "pos": "adj", "cn": "刻薄的", "strategy": "諧音(悶)", "mnemonic": "被那個說話「刻薄」的人罵完後，心裡會覺得非常「悶」。", "ex": "Don't be so mean to your little brother.", "grid": 2, "pos_idx": 3 },
+  { "en": "hairdresser", "ph": "hɛr͵drɛsɚ", "pos": "n", "cn": "美髮師", "strategy": "字根(Hair+Dress)", "mnemonic": "幫你的頭髮(Hair)剪成洋裝(Dress)形狀的人，就是「美髮師」。", "ex": "The hairdresser spent two hours styling my hair.", "grid": 2, "pos_idx": 4 },
+  { "en": "toad", "ph": "tod", "pos": "n", "cn": "蟾蜍", "strategy": "諧音(偷、豆)", "mnemonic": "這隻「蟾蜍」趁人不注意，「偷」吃了一顆巨大的紅「豆」。", "ex": "The boy found a large toad sitting under a wet rock.", "grid": 2, "pos_idx": 5 },
+  { "en": "harsh", "ph": "hɑrʃ", "pos": "adj", "cn": "嚴厲的", "strategy": "諧音(寒、雪)", "mnemonic": "在「寒雪」地的「嚴厲」環境下，連風聲聽起來都很刺耳。", "ex": "The man accepted the harsh criticism.", "grid": 2, "pos_idx": 6 },
+  { "en": "cyberbullying", "ph": "saɪbɚ͵bulɪɪŋ", "pos": "n", "cn": "網路霸凌", "strategy": "字根(Cyber+Bullying)", "mnemonic": "在賽博(Cyber)空間裡發起的不理睬攻擊，就是「網路霸凌」。", "ex": "Schools are taking measures to stop cyberbullying.", "grid": 2, "pos_idx": 7 },
+  { "en": "troll", "ph": "trol", "pos": "n", "cn": "網路酸民", "strategy": "諧音(戳)", "mnemonic": "這些「網路酸民」最愛從螢幕鑽出來，「戳」別人的痛處。", "ex": "Just ignore that online troll.", "grid": 2, "pos_idx": 8 },
+  { "en": "spite", "ph": "spaɪt", "pos": "n", "cn": "惡意", "strategy": "諧音(死、拍)", "mnemonic": "他帶著「惡意」，「死」命地「拍」打無辜的路人。", "ex": "She destroyed the letter out of pure spite.", "grid": 2, "pos_idx": 9 },
+  { "en": "comedian", "ph": "kə`midɪən", "pos": "n", "cn": "喜劇演員", "strategy": "字根(Come+Media)", "mnemonic": "大家都從媒體(Media)上面過來(Come)看他表演，他就是「喜劇演員」。", "ex": "The comedian told many jokes.", "grid": 2, "pos_idx": 10 },
+  { "en": "stocking", "ph": "stɑkɪŋ", "pos": "n", "cn": "長襪", "strategy": "字根(Stock+King)", "mnemonic": "國王(King)把他所有的股票(Stock)都藏在「長襪」裡。", "ex": "The children hung their stockings by the fireplace.", "grid": 2, "pos_idx": 11 },
+  { "en": "netizen", "ph": "nɛtəzṇ", "pos": "n", "cn": "網路公民", "strategy": "字根(Net+Citizen)", "mnemonic": "網路(Net)上的公民(Citizen)們正在蜘蛛網上開會。", "ex": "The news quickly became a topic among netizens.", "grid": 2, "pos_idx": 12 },
+  { "en": "EQ", "ph": "i`kju", "pos": "n", "cn": "情商", "strategy": "圖像(心靈空調)", "mnemonic": "「EQ」高的人內心有冷氣，面對火球也能保持冷靜涼爽。", "ex": "EQ is more important than IQ in the workplace.", "grid": 2, "pos_idx": 13 },
+  { "en": "make fun of", "ph": "mek fʌn ʌv", "pos": "phrase", "cn": "取笑", "strategy": "諧音(梅花、放)", "mnemonic": "在別人頭上「放」一朵「梅花」，藉此「取笑」他的造型。", "ex": "Some students made fun of Louis.", "grid": 2, "pos_idx": 14 },
+  { "en": "fill sth with sth", "ph": "fɪl...wɪð", "pos": "phrase", "cn": "充滿", "strategy": "諧音(肥油)", "mnemonic": "肚子裡「充滿」了「肥油」(Fill)，看起來圓滾滾。", "ex": "The man said he would fill his wife’s life with happiness.", "grid": 3, "pos_idx": 0 },
+  { "en": "keep away", "ph": "kip ə`we", "pos": "phrase", "cn": "遠離", "strategy": "諧音(氣屁)", "mnemonic": "這團超臭的「氣屁」讓大家都趕快「遠離」。", "ex": "Keep away from the burning house.", "grid": 3, "pos_idx": 1 },
+  { "en": "turn to", "ph": "tɝn tu", "pos": "phrase", "cn": "向...求助", "strategy": "諧音(攤、圖)", "mnemonic": "迷路時「攤」開地「圖」，就是正在「向地圖求助」。", "ex": "The tourist turned to the police for help.", "grid": 3, "pos_idx": 2 },
+  { "en": "set an example", "ph": "sɛt æn ɪɡ`zæmpl", "pos": "phrase", "cn": "樹立榜樣", "strategy": "諧音(誰、點、火)", "mnemonic": "在黑夜中「誰點了一個火」炬帶頭前進，就是「樹立榜樣」。", "ex": "The boss always arrives on time to set a good example.", "grid": 3, "pos_idx": 3 },
+  { "en": "come at", "ph": "kʌm æt", "pos": "phrase", "cn": "攻擊", "strategy": "諧音(看！鵝！)", "mnemonic": "「看！這隻鵝」正瘋狂衝過來發動「攻擊」。", "ex": "The man suddenly came at her with a knife.", "grid": 3, "pos_idx": 4 }
+];
+
+        const gridImages = {
+            1: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L4G1.jpg",
+            2: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L4G2.jpg",
+            3: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L4G3.jpg"
+        };
+
+        const cardsGrid = document.getElementById('cardsGrid');
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function createCard(item) {
+            const card = document.createElement('div');
+            card.className = 'card-perspective';
+            
+            const cols = 4;
+            const col = item.pos_idx % cols;
+            const row = Math.floor(item.pos_idx / cols);
+            
+            const posX = col * 33.3333; 
+            const posY = row * 33.3333; 
+            
+            card.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">
+                        <div class="vocab-image" style="background-image: url('${gridImages[item.grid]}'); background-position: ${posX}% ${posY}%;"></div>
+                        <div class="content-wrap">
+                            <div class="word-en">${item.en}</div>
+                            <div class="phonetic">/${item.ph}/</div>
+                            <button class="audio-btn" onclick="event.stopPropagation(); speak('${item.en.replace('...', ' ')}')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.08"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <div class="back-title">${item.en}</div>
+                        <div class="pos-cn">
+                            <span class="tag-pos">${item.pos}</span>
+                            <span class="font-black text-slate-800">${item.cn}</span>
+                        </div>
+                        <div class="strategy-tag">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line></svg>
+                            <span>${item.strategy}</span>
+                        </div>
+                        <div class="mnemonic-box">
+                            ${item.mnemonic}
+                        </div>
+                        <div class="example-sentence">
+                            ${item.ex}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                card.classList.toggle('flipped');
+            });
+
+            return card;
+        }
+
+        vocabData.forEach(item => {
+            cardsGrid.appendChild(createCard(item));
+        });
     </script>
 </body>
 </html>
