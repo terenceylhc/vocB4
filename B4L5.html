@@ -1,1 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 B4L5互動單字記憶卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-word: #0f172a;
+            --color-phonetic: #64748b;
+            --color-mnemonic: #ff9800;
+            --color-pos-bg: #e2e8f0;
+        }
 
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .card-container {
+            perspective: 1200px;
+            width: 100%;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card-inner {
+            display: grid;
+            width: 100%;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .card-front, .card-back {
+            grid-area: 1 / 1;
+            backface-visibility: hidden;
+            background-color: white;
+            border-radius: 28px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            /* Ensure both sides stretch to the height of the tallest side */
+            height: 100%;
+        }
+
+        .card-front-img-container {
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            position: relative;
+            overflow: hidden; /* 視覺邊界控制：徹底將邊界線擠出顯示框外 */
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+        }
+
+        .sprite-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* 溢位裁切：強制放大至 406% 消除原始邊框 */
+            background-size: 406%; 
+            background-repeat: no-repeat;
+            transition: transform 0.3s ease;
+        }
+
+        .card-container:hover .sprite-img {
+            transform: scale(1.03); /* Subtle zoom on hover */
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            padding: 2rem;
+            justify-content: center; /* 垂直居中排列 */
+        }
+
+        .flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* Utility classes for specific text styles */
+        .text-word { color: var(--color-word); font-weight: 900; }
+        .text-phonetic { color: var(--color-phonetic); }
+        .bg-mnemonic { background-color: var(--color-mnemonic); }
+        
+        .play-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1.5rem;
+            transition: transform 0.2s;
+        }
+        .play-btn:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <header class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">🧠 B4L5互動單字記憶卡</h1>
+                <p class="mt-4 text-lg text-gray-500 font-medium">點擊卡片翻面並聆聽發音，利用口訣加深記憶！</p>
+            </header>
+
+            <!-- 網格容器：手機 1 欄，電腦 2 欄 (Mandatory Task 2) -->
+            <div id="card-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+                <!-- Cards will be injected here by JS -->
+            </div>
+            
+            <div class="mt-12 text-center text-gray-400 text-sm">
+                🎉 已載入全部 29 個單字
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const vocData = [
+          { "en": "bill", "ph": "bɪl", "pos": "n.", "cn": "鈔票", "strategy": "諧音 (比爾)", "mnemonic": "微軟創辦人比爾蓋茲滿手都是鈔票。", "ex": "I really enjoyed the street performer’s dance, so I put a one-hundred-dollar bill into his box.", "grid": 1, "pos_idx": 0 },
+          { "en": "option", "ph": "`ɑpʃən", "pos": "n.", "cn": "選擇", "strategy": "諧音 (歐式黑白切)", "mnemonic": "來到黑白切攤位，黑白切（tion）哪一個黑白（op）小菜是你的選擇？", "ex": "In this shop, customers have many options for smartphone cases.", "grid": 1, "pos_idx": 1 },
+          { "en": "enable", "ph": "ɪn`ebḷ", "pos": "vt.", "cn": "使能夠", "strategy": "字根 (en- [使] + able [有能力的])", "mnemonic": "施展使（en）出有能力（able）的魔法，使能夠飛上天。", "ex": "The Internet enables people to connect with the world.", "grid": 1, "pos_idx": 2 },
+          { "en": "benefit", "ph": "`ɛnəfɪt", "pos": "n.", "cn": "好處，益處", "strategy": "諧音 (班尼費)", "mnemonic": "多喝水免費（fit）又對班（bene）級有好處。", "ex": "Drinking enough water every day can be of great benefit to a person.", "grid": 1, "pos_idx": 3 },
+          { "en": "reward", "ph": "rɪ`wɔrd", "pos": "n./vt.", "cn": "報酬，獎勵", "strategy": "諧音 (利我的)", "mnemonic": "這份工作是利我（reward）的，編織給了超高的報酬與獎勵。", "ex": "Jenny treated Paul to a meal as a reward for his help in finding her lost dog.", "grid": 1, "pos_idx": 4 },
+          { "en": "announce", "ph": "ə`naᴜns", "pos": "vt.", "cn": "宣布", "strategy": "諧音 (鵝鬧市)", "mnemonic": "鵝鬧市（announce）！大鵝在菜市場中心大聲宣布特價消息。", "ex": "The famous tennis player suddenly announced her retirement.", "grid": 1, "pos_idx": 5 },
+          { "en": "likewise", "ph": "`laɪk͵waɪz", "pos": "adv.", "cn": "同樣地", "strategy": "字根 (like [像] + wise [方式])", "mnemonic": "用很像（like）的方式（wise）去做，就是同樣地做法。", "ex": "Cathy put on her jacket when we left the restaurant, and I did likewise.", "grid": 1, "pos_idx": 6 },
+          { "en": "appealing", "ph": "ə`pilɪŋ", "pos": "adj.", "cn": "吸引人的", "strategy": "諧音 (鵝皮油亮)", "mnemonic": "烤鵝皮（appeal）真油亮（ling），油亮亮的模樣非常吸引人的。", "ex": "The idea of working in a foreign country sounds very appealing to me.", "grid": 1, "pos_idx": 7 },
+          { "en": "especially", "ph": "ə`spɛʃəlɪ", "pos": "adv.", "cn": "尤其", "strategy": "字根 (es- [加強] + special [特別] + ly)", "mnemonic": "這是一份特別（special）的禮物，尤其是送給你的。", "ex": "It rains frequently in northern Taiwan, especially in Keelung.", "grid": 1, "pos_idx": 8 },
+          { "en": "elderly", "ph": "`ɛldɚlɪ", "pos": "adj.", "cn": "年長的", "strategy": "字根 (elder [較年長的] + ly)", "mnemonic": "較年長的（elder）長輩，就是年長的人。", "ex": "This environment is not friendly to elderly people. There are too many stairs.", "grid": 1, "pos_idx": 9 },
+          { "en": "concerned", "ph": "kən`sɝnd", "pos": "adj.", "cn": "擔心的", "strategy": "諧音 (看神)", "mnemonic": "面對困境，信徒雙手合十看神（concerned）明，心裡非常擔心的祈求平安。", "ex": "The farmer is concerned about her crops because it has been raining heavily for days.", "grid": 1, "pos_idx": 10 },
+          { "en": "signal", "ph": "`sɪgnḷ", "pos": "n./vt.", "cn": "訊號 / 發信號", "strategy": "諧音 (洗個腦)", "mnemonic": "接收不良時，要把發射器洗（sig）腦（nal）重開，才能收到訊號。", "ex": "Elisa couldn’t send her message because the Wi-Fi signal was not stable.", "grid": 1, "pos_idx": 11 },
+          { "en": "electricity", "ph": "ɪ͵lɛk`trɪsətɪ", "pos": "n.", "cn": "電", "strategy": "諧音 (依賴靠楚設梯)", "mnemonic": "大家依賴靠楚（electri）設梯（city）子，因為爬高去接電線需要專業工具！", "ex": "This table lamp runs on electricity.", "grid": 1, "pos_idx": 12 },
+          { "en": "connection", "ph": "kə`nɛkʃən", "pos": "n.", "cn": "聯結", "strategy": "字根 (con- [共同] + nect [綁、接] + ion)", "mnemonic": "把兩條繩子共同（con）綁接（nect）在一起，形成穩固的聯結。", "ex": "I lost my Internet connection as I walked into the basement.", "grid": 1, "pos_idx": 13 },
+          { "en": "opponent", "ph": "ə`ponənt", "pos": "n.", "cn": "反對者", "strategy": "諧音 (黑白噴人)", "mnemonic": "那些在網路上黑白噴人（opponent）的酸民，永遠都是為反對而反對的反對者。", "ex": "The opponents of the new tourism policy said that it would hurt their businesses.", "grid": 1, "pos_idx": 14 },
+          { "en": "stable", "ph": "`stebḷ", "pos": "adj.", "cn": "穩定的，平穩的", "strategy": "諧音 (實地寶)", "mnemonic": "這塊地是塊實地寶（stable）地，地基極其穩固，蓋在上面的房子非常穩定的。", "ex": "Ivy and Joe have been in a stable relationship for three years.", "grid": 2, "pos_idx": 0 },
+          { "en": "method", "ph": "`mɛθəd", "pos": "n.", "cn": "方式，方法", "strategy": "諧音 (沒事得)", "mnemonic": "只要找到對的方法，自然沒事得（method）輕鬆過關。", "ex": "Mike used a new method for quickly completing his work to save more time.", "grid": 2, "pos_idx": 1 },
+          { "en": "burden", "ph": "`bɝdṇ", "pos": "n.", "cn": "負擔", "strategy": "諧音 (白等)", "mnemonic": "在狂風暴雨中拎著沉重的大行李白等（burden）一班永遠不會來的公車，這種身體與心理的煎熬真是極大的負擔。", "ex": "The noise from the busy highway was a burden on the residents’ peace and quiet.", "grid": 2, "pos_idx": 2 },
+          { "en": "debit card", "ph": "`dɛbɪt kɑrd", "pos": "n.", "cn": "簽帳金融卡", "strategy": "諧音 (代筆卡)", "mnemonic": "刷這張代筆卡（debit card）時，銀行帳戶會立刻自動「代筆」扣款。", "ex": "I used my debit card to pay for the groceries.", "grid": 2, "pos_idx": 3 },
+          { "en": "withdraw", "ph": "wɪð`drɔ", "pos": "vt.", "cn": "提領", "strategy": "字根 (with [往回] + draw [拉、抽])", "mnemonic": "把手往回（with）一拉抽（draw）出來，從自動櫃員機提領出現金。", "ex": "She went to the ATM to withdraw some money.", "grid": 2, "pos_idx": 4 },
+          { "en": "Europe", "ph": "`jᴜrəp", "pos": "n.", "cn": "歐洲", "strategy": "諧音 (有肉鋪)", "mnemonic": "歐洲（Europe）的市集到處都有肉鋪（Europe），起司跟火腿多到吃不完。", "ex": "My aunt invited me to spend the summer in Europe.", "grid": 2, "pos_idx": 5 },
+          { "en": "hack", "ph": "hæk", "pos": "vt.", "cn": "駭入", "strategy": "諧音 (駭客)", "mnemonic": "電腦螢幕上突然出現一個大大的駭客（hack）骷髏頭，糟糕，系統被駭入了！", "ex": "A stranger tried to hack into the school’s computer system.", "grid": 2, "pos_idx": 6 },
+          { "en": "theft", "ph": "θɛft", "pos": "n.", "cn": "竊取，偷竊", "strategy": "諧音 (誰服他)", "mnemonic": "這場神不知鬼不覺的偷竊案手法太高明，連警察都問誰服他（theft）？", "ex": "The store owner reported the theft of a valuable painting.", "grid": 2, "pos_idx": 7 },
+          { "en": "for short", "ph": "fɔr ʃɔrt", "pos": "phr.", "cn": "簡稱", "strategy": "字面聯想 (for [為了] + short [簡短])", "mnemonic": "為了（for）讓名字更簡短（short），我們通常會叫它的簡稱。", "ex": "My name is William, or you can call me Will for short.", "grid": 2, "pos_idx": 8 },
+          { "en": "go in for", "ph": "go ɪn fɔr", "pos": "phr.", "cn": "喜愛", "strategy": "字面聯想 (go in [走進去] + for [為了...])", "mnemonic": "看到為了（for）自己最喜愛的玩具店，就直接走進去（go in）逛。", "ex": "Vicky doesn’t really go in for the city life. She prefers living in the country.", "grid": 2, "pos_idx": 9 },
+          { "en": "so far", "ph": "so fɑr", "pos": "phr.", "cn": "到目前為止", "strategy": "字面聯想 (so [如此] + far [遙遠])", "mnemonic": "雖然走了如此（so）遙遠（far）的路，但到目前為止我們都表現得很好！", "ex": "The company, which was started six years ago, has created over thirty apps so far.", "grid": 2, "pos_idx": 10 },
+          { "en": "be used to", "ph": "bi juzd tu", "pos": "phr.", "cn": "習慣於", "strategy": "字面聯想 (be [處於] + used [用舊的])", "mnemonic": "東西用久了就變成舊的（used），心態也就習慣於這個狀態了。", "ex": "I’m not used to wearing dresses. I usually wear pants or shorts.", "grid": 2, "pos_idx": 11 },
+          { "en": "last but not least", "ph": "læst bʌt nɑt list", "pos": "phr.", "cn": "最後但同樣重要的", "strategy": "字面拆解 (last [最後] + but not least)", "mnemonic": "雖然排在最後（last），但絕不是（but not）最不重要的（least）關鍵！", "ex": "When you watch a movie, remember to stay quiet, focus on the plot, and last but not least, put your phone on silent.", "grid": 2, "pos_idx": 12 },
+          { "en": "out of order", "ph": "aʊt əv `ɔrdɚ", "pos": "phr.", "cn": "故障", "strategy": "字面拆解 (out of [超出] + order [秩序])", "mnemonic": "機器運作超出了（out of）原有的秩序（order），那就是故障了。", "ex": "The elevator is out of order and can’t be used until it’s fixed next week.", "grid": 2, "pos_idx": 13 }
+        ];
+
+        const imgUrls = {
+            1: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L5G1.jpg",
+            2: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L5G2.jpg"
+        };
+
+        // 4x4 Grid 座標計算函數
+        function getBackgroundPosition(index) {
+            // 在 4x4 網格中，計算 X 與 Y 的百分比
+            // 公式：(欄位 / 3) * 100%, (列 / 3) * 100%
+            const col = index % 4;
+            const row = Math.floor(index / 4);
+            const posX = (col / 3) * 100;
+            const posY = (row / 3) * 100;
+            return `${posX}% ${posY}%`;
+        }
+
+        function playAudio(event, word) {
+            if (event) {
+                event.stopPropagation(); // 避免點擊音量按鈕時觸發卡片翻轉
+            }
+            if ('speechSynthesis' in window) {
+                // 先取消先前的語音，確保立刻播放新的
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9; // 稍微放慢一點，讓發音更清晰
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function flipCard(cardElement, word) {
+            const isFlipped = cardElement.classList.contains('flipped');
+            cardElement.classList.toggle('flipped');
+
+            // 邏輯要求：翻面時自動朗讀一次單字 (只在翻到反面時朗讀)
+            if (!isFlipped) {
+                playAudio(null, word);
+            }
+        }
+
+        function renderCards() {
+            const gridContainer = document.getElementById('card-grid');
+            
+            vocData.forEach((item, index) => {
+                const bgImage = imgUrls[item.grid];
+                const bgPos = getBackgroundPosition(item.pos_idx);
+                
+                // 建立卡片外部容器
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = 'card-container';
+                cardWrapper.onclick = () => flipCard(cardWrapper, item.en);
+
+                // 填寫 HTML 樣板內容
+                cardWrapper.innerHTML = `
+                    <div class="card-inner">
+                        <!-- 正面：視覺提示面板 -->
+                        <div class="card-front">
+                            <div class="card-front-img-container">
+                                <div class="sprite-img" style="background-image: url('${bgImage}'); background-position: ${bgPos};"></div>
+                            </div>
+                            <div class="flex-grow flex flex-col justify-center items-center p-6">
+                                <h2 class="text-[2.5rem] text-word mb-1 text-center">${item.en}</h2>
+                                <div class="flex items-center justify-center gap-2 text-phonetic text-[1.1rem]">
+                                    <span>[${item.ph}]</span>
+                                    <button class="play-btn" onclick="playAudio(event, '${item.en}')" title="聆聽發音">🔊</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 反面：文字內容面板 -->
+                        <div class="card-back">
+                            <div class="flex flex-col items-center w-full max-w-lg mx-auto">
+                                <!-- 單字與中文區塊 -->
+                                <div class="text-center w-full mb-6">
+                                    <h2 class="text-[3.2rem] text-word tracking-tight leading-tight mb-3">${item.en}</h2>
+                                    <div class="flex items-center justify-center gap-3">
+                                        <span class="bg-[#e2e8f0] px-3 py-1 rounded-[6px] text-[1.1rem] font-bold italic text-gray-700 shadow-sm">${item.pos}</span>
+                                        <span class="text-[1.6rem] font-bold text-gray-800">${item.cn}</span>
+                                    </div>
+                                </div>
+
+                                <!-- 記憶策略區塊 -->
+                                <div class="w-full text-left flex flex-col gap-4">
+                                    <div class="text-[1.1rem] text-gray-600 font-medium pl-2">
+                                        💡 策略：${item.strategy}
+                                    </div>
+                                    <div class="bg-mnemonic text-white text-[1.3rem] font-bold p-5 rounded-[20px] shadow-sm leading-relaxed tracking-wide">
+                                        ${item.mnemonic}
+                                    </div>
+                                    <div class="pt-5 pb-2 mt-2 border-t-[1.5px] border-dashed border-gray-300">
+                                        <p class="text-[1.25rem] text-gray-500 italic leading-snug font-serif">
+                                            "${item.ex}"
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                gridContainer.appendChild(cardWrapper);
+            });
+        }
+
+        window.onload = () => {
+            renderCards();
+        };
+    </script>
+</body>
+</html>
