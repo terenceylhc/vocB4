@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 B4L6 互動單字記憶卡</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            gray: '#64748b',
+                            accent: '#ff9800',
+                            bg: '#f8fafc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        
+        .card-perspective {
+            perspective: 1500px;
+            position: relative;
+            transition: height 0.4s ease;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        
+        .card-perspective.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 28px;
+            background-color: #ffffff;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .sprite-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            border-top-left-radius: 27px;
+            border-top-right-radius: 27px;
+            background-color: #f8fafc;
+        }
+
+        .sprite-img {
+            position: absolute;
+            /* 104% 寬高搭配 -2% 偏移，將原始 4x4 網格界線擠壓出可視範圍之外，防止圓角黑線 */
+            top: -2%;
+            left: -2%;
+            width: 104%;
+            height: 104%;
+            background-size: 406%; /* 溢位裁切規格 */
+            background-repeat: no-repeat;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+
+        /* 滾動條美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="font-sans text-brand-dark antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/80 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 md:py-6 flex flex-col items-center gap-4">
+            <!-- 標題與副標題：對齊 B4L5 經典置中格式 -->
+            <div class="text-center">
+                <h1 id="main-title" class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center justify-center gap-2">
+                    🧠 B4L6互動單字記憶卡
+                </h1>
+                <p class="text-sm md:text-base text-slate-500 font-medium mt-2">
+                    點擊卡片翻面並聆聽發音，利用口訣加深記憶！
+                </p>
+            </div>
+            
+            <!-- 控制選項與進度：精美緊湊地在下方排列 -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 w-full max-w-2xl justify-center mt-1">
+                <!-- TTS 語意開關 -->
+                <div class="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-full justify-between w-full sm:w-auto">
+                    <span class="text-xs md:text-sm text-slate-600 font-semibold">🔊 翻面自動朗讀</span>
+                    <button id="tts-toggle" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-orange-500">
+                        <span id="tts-toggle-dot" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-5"></span>
+                    </button>
+                </div>
+                
+                <!-- 熟記進度條 -->
+                <div class="bg-slate-50 border border-slate-100 p-2 px-4 rounded-full flex items-center gap-3 w-full sm:w-72">
+                    <span class="text-xs font-bold text-slate-600 shrink-0">學習進度</span>
+                    <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <span id="progress-text" class="text-xs font-bold text-slate-600 shrink-0">0 / 34</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 py-8 w-full">
+        <!-- 響應式：電腦版一列固定2張 (lg:grid-cols-2)；手機版一列固定1張 -->
+        <div id="cards-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+            <!-- 由 JS 動態生成 -->
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800 text-center text-sm">
+        <p>© 2026 互動單字記憶系統. 精確影像對齊與深度圖像心理學教育工具.</p>
+    </footer>
+
+    <script>
+        // 單字資料庫
+        const vocabData = [
+          {
+            "en": "diligent",
+            "ph": "[`dɪlədʒənt]",
+            "pos": "adj.",
+            "cn": "勤奮的",
+            "strategy": "諧音記憶 (地毯枕頭)",
+            "mnemonic": "勤奮的人連在「地毯」和「枕頭」上都在讀書。",
+            "ex": "Michael is diligent in his studies, so he does very well at school.",
+            "grid": 1,
+            "pos_idx": 0
+          },
+          {
+            "en": "international",
+            "ph": "[͵ɪntɚ`næʃənḷ]",
+            "pos": "adj.",
+            "cn": "國際的",
+            "strategy": "字根字首拆解 (inter- 在...之間 + nation 國家 + -al 形容詞字尾)",
+            "mnemonic": "在各個「國家之間」交流，就是國際的事務。",
+            "ex": "English is an international language. Many people in different countries use it.",
+            "grid": 1,
+            "pos_idx": 1
+          },
+          {
+            "en": "relatively",
+            "ph": "[`rɛlətɪvlɪ]",
+            "pos": "adv.",
+            "cn": "相對地",
+            "strategy": "字根字首拆解 (relative 親戚 + -ly 副詞字尾)",
+            "mnemonic": "去「親戚」家過年，紅包拿得相對地比平常多。",
+            "ex": "Dustin always shops on Amazon because of its relatively low prices.",
+            "grid": 1,
+            "pos_idx": 2
+          },
+          {
+            "en": "remote",
+            "ph": "[rɪ`mot]",
+            "pos": "adj.",
+            "cn": "偏遠的",
+            "strategy": "圖像記憶 (Remote control 遙控器)",
+            "mnemonic": "用「遙控器」去控制偏遠的無人機。",
+            "ex": "The remote village is famous for its unique buildings and traditional costume.",
+            "grid": 1,
+            "pos_idx": 3
+          },
+          {
+            "en": "pursue",
+            "ph": "[pɚ`su]",
+            "pos": "vt.",
+            "cn": "追求",
+            "strategy": "諧音記憶 (撲向書)",
+            "mnemonic": "為了追求知識，他整個人「撲向書」本。",
+            "ex": "Chris pursues his goal of becoming an engineer by studying online in addition to his college courses.",
+            "grid": 1,
+            "pos_idx": 4
+          },
+          {
+            "en": "carving",
+            "ph": "[`kɑrvɪŋ]",
+            "pos": "n.",
+            "cn": "雕刻技藝",
+            "strategy": "圖像記憶 (Car 汽車)",
+            "mnemonic": "展示在一輛「汽車」引擎蓋上的高超木頭雕刻技藝。",
+            "ex": "The wood carving artist is going to display his work at this museum next month.",
+            "grid": 1,
+            "pos_idx": 5
+          },
+          {
+            "en": "championship",
+            "ph": "[`tʃæmpɪən͵ʃɪp]",
+            "pos": "n.",
+            "cn": "錦標賽",
+            "strategy": "圖像記憶 (Champion 冠軍 + Ship 船)",
+            "mnemonic": "贏得錦標賽的「冠軍」們，一起搭乘金色的大「船」遊行。",
+            "ex": "Taiwan’s baseball team beat all the other teams and won the international championship.",
+            "grid": 1,
+            "pos_idx": 6
+          },
+          {
+            "en": "volunteer",
+            "ph": "[͵vɑlən`tɪr]",
+            "pos": "vi.; vt. / n.",
+            "cn": "自願 / 志工",
+            "strategy": "諧音記憶 (握手踢球)",
+            "mnemonic": "「志工」「自願」出來跟大家「握手」並一起「踢球」。",
+            "ex": "The library needs more volunteers to help arrange the books.",
+            "grid": 1,
+            "pos_idx": 7
+          },
+          {
+            "en": "principal",
+            "ph": "[`prɪnsəpḷ]",
+            "pos": "n.",
+            "cn": "校長",
+            "strategy": "字根與圖像記憶 (prince 王子 + pal 朋友)",
+            "mnemonic": "「王子」和他的「朋友」一起回母校拜訪校長。",
+            "ex": "Our principal, Ms. Lin, has led our school to be the best high school in town.",
+            "grid": 1,
+            "pos_idx": 8
+          },
+          {
+            "en": "possibility",
+            "ph": "[͵pɑsə`bɪlətɪ]",
+            "pos": "n.",
+            "cn": "可能性，潛力",
+            "strategy": "圖像記憶 (Boss 寶石)",
+            "mnemonic": "這個普通的石頭裡，蘊含著變成「Boss 級閃亮寶石」的可能性與潛力。",
+            "ex": "Leo is too stubborn. There’s no possibility of changing his mind.",
+            "grid": 1,
+            "pos_idx": 9
+          },
+          {
+            "en": "establish",
+            "ph": "[ə`stæblɪʃ]",
+            "pos": "vt.",
+            "cn": "建立，設立",
+            "strategy": "字根拆解 (stable 穩定的)",
+            "mnemonic": "把地基打得非常「穩定（stable）」，才能建立起高樓大廈。",
+            "ex": "The two companies established a business relationship with each other many years ago.",
+            "grid": 1,
+            "pos_idx": 10
+          },
+          {
+            "en": "fulfill",
+            "ph": "[fᴜl`fɪl]",
+            "pos": "vt.",
+            "cn": "實現，達成",
+            "strategy": "字根字首拆解 (full 滿的 + fill 裝滿)",
+            "mnemonic": "把夢想的許願瓶「完全裝滿」，就實現了願望。",
+            "ex": "Tony finally fulfilled his dream of becoming a Broadway performer after years of effort.",
+            "grid": 1,
+            "pos_idx": 11
+          },
+          {
+            "en": "outstanding",
+            "ph": "[͵aᴜt`stændɪŋ]",
+            "pos": "adj.",
+            "cn": "出色的，傑出的",
+            "strategy": "字根字首拆解 (out 外面 + stand 站立)",
+            "mnemonic": "「站」在人群「外面」最高的地方，顯得非常出色的。",
+            "ex": "The singer’s outstanding skill caught the public’s attention.",
+            "grid": 1,
+            "pos_idx": 12
+          },
+          {
+            "en": "arouse",
+            "ph": "[ə`raᴜz]",
+            "pos": "vt.",
+            "cn": "激起，引起",
+            "strategy": "諧音記憶 (鵝肉絲)",
+            "mnemonic": "這盤香噴噴的「鵝肉絲」，激起了大家的食慾。",
+            "ex": "The sound from outside aroused Joanne’s curiosity, so she went to the window to see what had happened.",
+            "grid": 1,
+            "pos_idx": 13
+          },
+          {
+            "en": "passion",
+            "ph": "[`pæʃən]",
+            "pos": "n.",
+            "cn": "熱情",
+            "strategy": "諧音記憶 (怕生)",
+            "mnemonic": "原本「怕生」的小狗，一看到主人就充滿熱情地撲上來。",
+            "ex": "Charlie loves animals, and he often talks with great passion about them.",
+            "grid": 1,
+            "pos_idx": 14
+          },
+          {
+            "en": "related",
+            "ph": "[rɪ`letɪd]",
+            "pos": "adj.",
+            "cn": "相關的，有關聯的",
+            "strategy": "字根字首拆解 (relate 聯繫 + -ed 形容詞字尾)",
+            "mnemonic": "把這兩件「熱（re）門的累（late）事」聯繫在一起，發現它們是高度相關的。",
+            "ex": "The doctor said that my poor sleep quality is closely related to my illness.",
+            "grid": 2,
+            "pos_idx": 0
+          },
+          {
+            "en": "France",
+            "ph": "[fræns]",
+            "pos": "n.",
+            "cn": "法國",
+            "strategy": "圖像記憶 (法式長棍麵包與艾菲爾鐵塔)",
+            "mnemonic": "來到浪漫的法國，一手拿著「法式長棍麵包」，一邊欣賞宏偉的「艾菲爾鐵塔」。",
+            "ex": "Tracy came to the big city in pursuit of her dreams in France.",
+            "grid": 2,
+            "pos_idx": 1
+          },
+          {
+            "en": "Michelin",
+            "ph": "[`mɪʃəlɪn]",
+            "pos": "n.",
+            "cn": "米其林(指南)",
+            "strategy": "圖像記憶 (米其林輪胎人)",
+            "mnemonic": "胖嘟嘟的「米其林輪胎人」手裡拿著一本紅色米其林指南。",
+            "ex": "The restaurant was awarded two Michelin stars for its exceptional food.",
+            "grid": 2,
+            "pos_idx": 2
+          },
+          {
+            "en": "station chef",
+            "ph": "[`steʃən ʃɛf]",
+            "pos": "n.",
+            "cn": "領班；內場廚師",
+            "strategy": "圖像與字面記憶 (station 工作站 + chef 廚師)",
+            "mnemonic": "「內場廚師」們在廚房的各個「工作站（station）」辛勤工作，由領班統一指揮。",
+            "ex": "As a station chef, Kevin is in charge of preparing all the meat dishes.",
+            "grid": 2,
+            "pos_idx": 3
+          },
+          {
+            "en": "enroll",
+            "ph": "[ɪn`rol]",
+            "pos": "vi.",
+            "cn": "入學，註冊",
+            "strategy": "字根字首拆解 (en- 進入 + roll 名冊/滾動)",
+            "mnemonic": "把名字「寫入（en）滾動（roll）的羊皮紙名冊」中，完成入學註冊。",
+            "ex": "More and more students are enrolling in this online English course.",
+            "grid": 2,
+            "pos_idx": 4
+          },
+          {
+            "en": "vocational",
+            "ph": "[vo`keʃənḷ]",
+            "pos": "adj.",
+            "cn": "職業的",
+            "strategy": "諧音記憶 (黑客神鞋)",
+            "mnemonic": "穿上這雙「黑客神鞋」，就能掌握各種職業的開鎖技能。",
+            "ex": "He decided to study at a vocational high school to learn practical automotive skills.",
+            "grid": 2,
+            "pos_idx": 5
+          },
+          {
+            "en": "European",
+            "ph": "[͵jᴜrə`piən]",
+            "pos": "adj.",
+            "cn": "歐洲的",
+            "strategy": "諧音記憶 (油肉餅)",
+            "mnemonic": "這種香噴噴的「油肉餅」，是道地的歐洲的傳統美食。",
+            "ex": "The traveler visited several European countries, including Italy and Germany.",
+            "grid": 2,
+            "pos_idx": 6
+          },
+          {
+            "en": "military service",
+            "ph": "[͵mɪlətɛrɪ `sɝvɪs]",
+            "pos": "n.",
+            "cn": "兵役",
+            "strategy": "圖像記憶 (Military 軍隊 + Service 服務)",
+            "mnemonic": "剪了平頭、穿上迷彩服，就是去軍隊服兵役。",
+            "ex": "In Taiwan, young men are required to complete military service.",
+            "grid": 2,
+            "pos_idx": 7
+          },
+          {
+            "en": "township",
+            "ph": "[`taᴜnʃɪp]",
+            "pos": "n.",
+            "cn": "鄉",
+            "strategy": "圖像與字面記憶 (town 城鎮 + ship 船/名詞字尾)",
+            "mnemonic": "整個「城鎮（town）」都淹水了，大家只能坐「船（ship）」去隔壁鄉。",
+            "ex": "The remote township is surrounded by beautiful green hills.",
+            "grid": 2,
+            "pos_idx": 8
+          },
+          {
+            "en": "sow",
+            "ph": "[so]",
+            "pos": "vt.",
+            "cn": "播種",
+            "strategy": "諧音記憶 (肉手 / 瘦)",
+            "mnemonic": "農夫用「肉手」把種子撒進「瘦」弱的土壤裡播種。",
+            "ex": "Farmers usually sow seeds in the fields during spring.",
+            "grid": 2,
+            "pos_idx": 9
+          },
+          {
+            "en": "agricultural",
+            "ph": "[͵ægrɪ`kʌltʃərəl]",
+            "pos": "adj.",
+            "cn": "農業的",
+            "strategy": "圖像記憶 (Agri- 土地/農業 + cultural 文化的)",
+            "mnemonic": "「土地（Agri）上長出了巨大的稻穗文化」，這就是農業的發展。",
+            "ex": "The country’s agricultural products are exported to many places around the world.",
+            "grid": 2,
+            "pos_idx": 10
+          },
+          {
+            "en": "cuisine",
+            "ph": "[kwɪ`zin]",
+            "pos": "n.",
+            "cn": "菜餚",
+            "strategy": "諧音記憶 (虧錢 / 筷子)",
+            "mnemonic": "老闆拿著「筷子」招待大家吃頂級菜餚，結果大「虧錢」。",
+            "ex": "Italian cuisine is famous for its delicious pasta and pizza.",
+            "grid": 2,
+            "pos_idx": 11
+          },
+          {
+            "en": "head",
+            "ph": "[hɛd]",
+            "pos": "n.",
+            "cn": "首長，領導者",
+            "strategy": "圖像記憶 (Head 頭部)",
+            "mnemonic": "戴著閃亮皇冠的「頭（Head）」，代表他就是這裡的首長與領導者。",
+            "ex": "Mr. Wang is the head of our department.",
+            "grid": 2,
+            "pos_idx": 12
+          },
+          {
+            "en": "make up one's mind",
+            "ph": "[ph.]",
+            "pos": "phr.",
+            "cn": "下定決心",
+            "strategy": "字面拆解 (make up 組裝/化妝 + mind 頭腦)",
+            "mnemonic": "把發光的齒輪重新「組裝（make up）進頭腦（mind）」裡，代表下定決心不再動搖。",
+            "ex": "Judy finally made up her mind to study abroad after high school.",
+            "grid": 2,
+            "pos_idx": 13
+          },
+          {
+            "en": "aside from",
+            "ph": "[ph.]",
+            "pos": "phr.",
+            "cn": "除……之外",
+            "strategy": "字面拆解 (aside 在旁邊 + from 來自)",
+            "mnemonic": "把這顆怪異的仙人掌擺在「旁邊（aside）」，除它之外，其他全都是鮮花。",
+            "ex": "Aside from owning an Italian restaurant, David also owns a big shopping mall.",
+            "grid": 2,
+            "pos_idx": 14
+          },
+          {
+            "en": "set up",
+            "ph": "[ph.]",
+            "pos": "phr.",
+            "cn": "開設，創辦",
+            "strategy": "字面拆解 (set 安置 + up 起來)",
+            "mnemonic": "合力把巨大的招牌「安置（set）起來（up）」，宣告新店正式開設與創辦。",
+            "ex": "They set up a small tech company in 2020 to develop creative software solutions.",
+            "grid": 3,
+            "pos_idx": 0
+          },
+          {
+            "en": "above all",
+            "ph": "[ph.]",
+            "pos": "phr.",
+            "cn": "尤其，最重要地",
+            "strategy": "字面拆解 (above 在...之上 + all 全部)",
+            "mnemonic": "熱氣球飛到了「全部（all）之上的最高處（above）」，尤其、最重要地是它超越了雲朵。",
+            "ex": "The house is big and beautiful. Above all, it’s close to my office.",
+            "grid": 3,
+            "pos_idx": 1
+          },
+          {
+            "en": "day in and day out",
+            "ph": "[ph.]",
+            "pos": "phr.",
+            "cn": "每天，一天到晚",
+            "strategy": "字面拆解 (day 白天 + in 進入 / out 出去)",
+            "mnemonic": "看著太陽「進入（in）又出去（out）」，代表每天、一天到晚都在重複同樣的日子。",
+            "ex": "It is boring for Tony to do the same job in the office day in and day out.",
+            "grid": 3,
+            "pos_idx": 2
+          },
+          {
+            "en": "in spite of",
+            "ph": "[ph.]",
+            "pos": "phr.",
+            "cn": "儘管",
+            "strategy": "意境記憶 (在冰雪中強壯破土)",
+            "mnemonic": "儘管大雪紛飛、冰天雪地，翠綠的小嫩芽依然強壯地破冰而出。",
+            "ex": "In spite of the fact that Emily’s not so rich, she still gives most of her money to the poor.",
+            "grid": 3,
+            "pos_idx": 3
+          }
+        ];
+
+        // 引入本地或原圖庫的 Sprite 影像位置
+        const spriteUrls = {
+            1: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L6G1.jpg",
+            2: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L6G2.jpg",
+            3: "https://raw.githubusercontent.com/terenceylhc/vocB4/main/B4L6G3.jpg"
+        };
+
+        // 熟記狀態紀錄
+        let masteredWords = JSON.parse(localStorage.getItem('mastered_B4L6_words')) || [];
+        let autoTTS = true;
+
+        // TTS 發音功能
+        function speakWord(wordText) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(wordText);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85; 
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function getBackgroundPosition(grid, posIdx) {
+            const col = posIdx % 4;
+            const row = Math.floor(posIdx / 4);
+            const xOffset = (col / 3) * 100;
+            let yOffset = (row / 3) * 100;
+            
+            if (grid === 2) {
+                if (row === 1) {
+                    yOffset += 1.8; // enroll 到 military service
+                } else if (row === 2) {
+                    yOffset += 2.6; // township 到 cuisine (增加溢位，阻擋頂部滲入)
+                } else if (row === 3) {
+                    yOffset += 1.8; // head 到 aside from
+                }
+            }
+            
+            return `${xOffset.toFixed(4)}% ${yOffset.toFixed(4)}%`;
+        }
+
+        // 卡片翻轉
+        function toggleFlip(cardId, wordEn) {
+            const cardEl = document.getElementById(cardId);
+            const isFlipped = cardEl.classList.toggle('flipped');
+            
+            if (isFlipped && autoTTS) {
+                setTimeout(() => {
+                    speakWord(wordEn);
+                }, 200);
+            }
+        }
+
+        // 熟記狀態切換
+        function toggleMastered(index, event) {
+            event.stopPropagation(); // 防止觸發翻牌
+            
+            const word = vocabData[index];
+            const masteredIdx = masteredWords.indexOf(word.en);
+            
+            if (masteredIdx > -1) {
+                masteredWords.splice(masteredIdx, 1);
+            } else {
+                masteredWords.push(word.en);
+            }
+            
+            localStorage.setItem('mastered_B4L6_words', JSON.stringify(masteredWords));
+            
+            updateProgress();
+            renderGrid();
+        }
+
+        // 更新學習熟記進度條
+        function updateProgress() {
+            const total = vocabData.length;
+            const masteredCount = masteredWords.filter(en => vocabData.some(v => v.en === en)).length;
+            const percentage = (masteredCount / total) * 100;
+            
+            document.getElementById('progress-text').innerText = `${masteredCount} / ${total}`;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+        }
+
+        function renderGrid() {
+            const gridContainer = document.getElementById('cards-grid');
+            gridContainer.innerHTML = '';
+            
+            vocabData.forEach((word, index) => {
+                const cardId = `card-${index}`;
+                const bgPos = getBackgroundPosition(word.grid, word.pos_idx);
+                const spriteUrl = spriteUrls[word.grid];
+                const isMastered = masteredWords.includes(word.en);
+                
+                const cardHtml = `
+                    <div id="${cardId}" class="card-perspective cursor-pointer" onclick="toggleFlip('${cardId}', '${word.en}')">
+                        <div class="card-inner">
+                            
+                            <!-- ================= 正面呈現 (Visual Cue Panel) ================= -->
+                            <div class="card-front">
+                                <!-- 影像區 -->
+                                <div class="sprite-container shadow-inner">
+                                    <div class="sprite-img" style="background-image: url('${spriteUrl}'); background-position: ${bgPos};"></div>
+                                    <!-- 浮動熟記標章 -->
+                                    <button onclick="toggleMastered(${index}, event)" class="absolute top-4 right-4 p-3 rounded-full transition-all duration-300 transform hover:scale-110 z-20 ${isMastered ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-white/80 hover:bg-white text-slate-400 border border-slate-200/50 backdrop-blur-sm shadow-md'}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <!-- 文字區：2.5rem 粗體、音標與朗讀按鈕 -->
+                                <div class="flex-grow flex flex-col justify-center items-center text-center px-8 py-10 min-h-[160px]">
+                                    <h2 class="text-[2.5rem] font-black text-slate-900 leading-tight tracking-tight">${word.en}</h2>
+                                    <div class="flex items-center gap-2 mt-3">
+                                        <span class="text-lg font-medium text-slate-500 font-mono">${word.ph}</span>
+                                        <button onclick="event.stopPropagation(); speakWord('${word.en}')" class="p-2 hover:bg-slate-100 rounded-full text-orange-500 transition active:scale-95" title="發音">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ================= 反面呈現 (Textual Content Panel) ================= -->
+                            <div class="card-back p-8 flex flex-col justify-between">
+                                <!-- 浮動熟記標章 -->
+                                <div class="absolute top-4 right-4 z-20">
+                                    <button onclick="toggleMastered(${index}, event)" class="p-3 rounded-full transition-all duration-300 transform hover:scale-110 ${isMastered ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-slate-50 text-slate-400 border border-slate-200'}" title="標記熟記">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- 整體內容垂直置中 -->
+                                <div class="flex-grow flex flex-col justify-center gap-6">
+                                    <div class="text-center">
+                                        <!-- 單字 3.2rem -->
+                                        <h2 class="text-[3.2rem] font-black text-[#0f172a] leading-none tracking-tight">${word.en}</h2>
+                                        <!-- 詞性標籤與中文翻譯 -->
+                                        <div class="flex items-center justify-center gap-3 mt-3 flex-wrap">
+                                            <span class="text-[1.1rem] px-3 py-1 bg-slate-100 text-slate-700 font-bold italic rounded-lg border border-slate-200">${word.pos}</span>
+                                            <span class="text-[1.6rem] font-bold text-slate-800">${word.cn}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 策略提示 -->
+                                    <div class="text-center text-slate-600 text-[1.05rem] font-medium leading-relaxed">
+                                        💡 <span class="font-bold">策略：</span>${word.strategy}
+                                    </div>
+
+                                    <!-- 口訣方塊 (背景色為橘色 #ff9800，圓角 20px) -->
+                                    <div class="bg-[#ff9800] text-white p-5 rounded-[20px] shadow-md shadow-orange-500/10 text-center">
+                                        <p class="text-[1.3rem] font-bold leading-relaxed tracking-wide">${word.mnemonic}</p>
+                                    </div>
+
+                                    <!-- 例句區：上方一條灰色細虛線 -->
+                                    <div class="pt-5 border-t border-dashed border-slate-300">
+                                        <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 text-center">實用例句 Context</div>
+                                        <p class="text-[1.25rem] text-slate-500 italic font-medium leading-relaxed text-center font-serif">
+                                            "${word.ex}"
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                `;
+                
+                gridContainer.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            
+            // 每次渲染網格後，動態更新卡片高度同步，以滿足自適應高度
+            setTimeout(syncCardHeights, 100);
+        }
+
+        function syncCardHeights() {
+            const cards = document.querySelectorAll('.card-perspective');
+            
+            // 1. 重設所有卡片高度以測量其實際自然高度
+            cards.forEach(card => {
+                card.style.height = 'auto';
+                const front = card.querySelector('.card-front');
+                const back = card.querySelector('.card-back');
+                front.style.height = 'auto';
+                back.style.height = 'auto';
+            });
+            
+            // 2. 尋找全網頁所有卡片（包含正反面）的最大高度值
+            let globalMaxHeight = 0;
+            cards.forEach(card => {
+                const front = card.querySelector('.card-front');
+                const back = card.querySelector('.card-back');
+                const maxForCard = Math.max(front.scrollHeight, back.scrollHeight);
+                if (maxForCard > globalMaxHeight) {
+                    globalMaxHeight = maxForCard;
+                }
+            });
+            
+            // 3. 將全域最大高度套用到每張卡片上，確保大小完全一致且不留底邊空白
+            cards.forEach(card => {
+                card.style.height = `${globalMaxHeight}px`;
+                const front = card.querySelector('.card-front');
+                const back = card.querySelector('.card-back');
+                front.style.height = '100%';
+                back.style.height = '100%';
+            });
+        }
+
+        // 頁面初始化事件：直接進入單字頁面，不顯示任何彈窗
+        window.onload = function () {
+            const ttsToggle = document.getElementById('tts-toggle');
+            const ttsToggleDot = document.getElementById('tts-toggle-dot');
+
+            // 自動語音播放開關監聽
+            ttsToggle.addEventListener('click', () => {
+                autoTTS = !autoTTS;
+                if (autoTTS) {
+                    ttsToggle.classList.remove('bg-gray-200');
+                    ttsToggle.classList.add('bg-orange-500');
+                    ttsToggleDot.classList.remove('translate-x-0');
+                    ttsToggleDot.classList.add('translate-x-5');
+                } else {
+                    ttsToggle.classList.remove('bg-orange-500');
+                    ttsToggle.classList.add('bg-gray-200');
+                    ttsToggleDot.classList.remove('translate-x-5');
+                    ttsToggleDot.classList.add('translate-x-0');
+                }
+            });
+
+            // 略過初始化直接載入單字
+            updateProgress();
+            renderGrid();
+
+            // 響應式高度同步監聽
+            window.addEventListener('resize', syncCardHeights);
+        }
+    </script>
+</body>
+</html>
